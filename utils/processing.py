@@ -154,7 +154,7 @@ def _convert_with_libreoffice(source_path: Path, target_extension: str, output_d
     libreoffice_executable = _resolve_libreoffice_executable()
     if not libreoffice_executable:
         raise ValueError(
-            "This conversion needs LibreOffice installed on the machine"
+            "This conversion is unavailable on this deployment because LibreOffice is not installed."
         )
 
     command = [
@@ -169,7 +169,7 @@ def _convert_with_libreoffice(source_path: Path, target_extension: str, output_d
     subprocess.run(command, check=True, capture_output=True, timeout=300)
     output_path = output_dir / f"{source_path.stem}.{target_extension}"
     if not output_path.exists():
-        raise ValueError("LibreOffice did not produce the converted file")
+        raise ValueError("LibreOffice could not create the converted file.")
     return output_path
 
 
@@ -208,22 +208,22 @@ def convert_image_file(source_path: Path, conversion_target: str) -> Path:
 
     if conversion_target == "word_to_pdf":
         if source_path.suffix.lower() not in {".doc", ".docx"}:
-            raise ValueError("Please send a Word file for Word to PDF conversion")
+            raise ValueError("Please send a DOC or DOCX file for Word to PDF conversion.")
         return _convert_with_libreoffice(source_path, "pdf", source_path.parent)
 
     if conversion_target == "powerpoint_to_pdf":
         if source_path.suffix.lower() not in {".ppt", ".pptx"}:
-            raise ValueError("Please send a PowerPoint file for PowerPoint to PDF conversion")
+            raise ValueError("Please send a PPT or PPTX file for PowerPoint to PDF conversion.")
         return _convert_with_libreoffice(source_path, "pdf", source_path.parent)
 
     if conversion_target == "excel_to_pdf":
         if source_path.suffix.lower() not in {".xls", ".xlsx"}:
-            raise ValueError("Please send an Excel file for Excel to PDF conversion")
+            raise ValueError("Please send an XLS or XLSX file for Excel to PDF conversion.")
         return _convert_with_libreoffice(source_path, "pdf", source_path.parent)
 
     if conversion_target == "html_to_pdf":
         if source_path.suffix.lower() not in {".html", ".htm"}:
-            raise ValueError("Please send an HTML file for HTML to PDF conversion")
+            raise ValueError("Please send an HTML or HTM file for HTML to PDF conversion.")
         return _convert_with_libreoffice(source_path, "pdf", source_path.parent)
 
     if conversion_target == "pdf_to_jpg":
@@ -231,10 +231,10 @@ def convert_image_file(source_path: Path, conversion_target: str) -> Path:
 
     if conversion_target == "pdf_to_word":
         if source_path.suffix.lower() != ".pdf":
-            raise ValueError("Please send a PDF file for PDF to Word conversion")
+            raise ValueError("Please send a PDF file for PDF to Word conversion.")
         if Converter is None:
             raise ValueError(
-                "PDF to Word is not available yet because the pdf2docx package is not installed"
+                "PDF to Word is unavailable because the required pdf2docx package is not installed."
             )
 
         output_path = source_path.with_suffix(".docx")
@@ -276,14 +276,14 @@ def convert_image_file(source_path: Path, conversion_target: str) -> Path:
                 writer.write(pdf_handle)
             return output_path
 
-    raise ValueError("Unsupported conversion selected")
+    raise ValueError("Unsupported conversion selected.")
 
 
 def convert_pdf_to_jpg(source_path: Path) -> Path:
     if source_path.suffix.lower() != ".pdf":
-        raise ValueError("Please send a PDF file for PDF to JPG conversion")
+        raise ValueError("Please send a PDF file for PDF to JPG conversion.")
     if not PDF_RENDERING_AVAILABLE:
-        raise ValueError("PDF to JPG needs PyMuPDF installed")
+        raise ValueError("PDF to JPG is unavailable because PyMuPDF is not installed.")
 
     output_dir = source_path.parent / f"{source_path.stem}_jpg_pages"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -300,7 +300,7 @@ def convert_pdf_to_jpg(source_path: Path) -> Path:
         document.close()
 
     if not image_paths:
-        raise ValueError("The PDF has no renderable pages")
+        raise ValueError("The PDF does not contain any renderable pages.")
 
     if len(image_paths) == 1:
         return image_paths[0]
@@ -310,11 +310,11 @@ def convert_pdf_to_jpg(source_path: Path) -> Path:
 
 def convert_pdf_to_powerpoint(source_path: Path) -> Path:
     if source_path.suffix.lower() != ".pdf":
-        raise ValueError("Please send a PDF file for PDF to PowerPoint conversion")
+        raise ValueError("Please send a PDF file for PDF to PowerPoint conversion.")
     if not PDF_RENDERING_AVAILABLE:
-        raise ValueError("PDF to PowerPoint needs PyMuPDF installed")
+        raise ValueError("PDF to PowerPoint is unavailable because PyMuPDF is not installed.")
     if Presentation is None or Inches is None:
-        raise ValueError("PDF to PowerPoint needs python-pptx installed")
+        raise ValueError("PDF to PowerPoint is unavailable because python-pptx is not installed.")
 
     presentation = Presentation()
     presentation.slide_width = Inches(13.333)
@@ -347,11 +347,11 @@ def convert_pdf_to_powerpoint(source_path: Path) -> Path:
 
 def convert_pdf_to_excel(source_path: Path) -> Path:
     if source_path.suffix.lower() != ".pdf":
-        raise ValueError("Please send a PDF file for PDF to Excel conversion")
+        raise ValueError("Please send a PDF file for PDF to Excel conversion.")
     if not PDF_RENDERING_AVAILABLE:
-        raise ValueError("PDF to Excel needs PyMuPDF installed")
+        raise ValueError("PDF to Excel is unavailable because PyMuPDF is not installed.")
     if Workbook is None:
-        raise ValueError("PDF to Excel needs openpyxl installed")
+        raise ValueError("PDF to Excel is unavailable because openpyxl is not installed.")
 
     workbook = Workbook()
     default_sheet = workbook.active
@@ -376,11 +376,11 @@ def convert_pdf_to_excel(source_path: Path) -> Path:
 
 def convert_pdf_to_pdfa(source_path: Path) -> Path:
     if source_path.suffix.lower() != ".pdf":
-        raise ValueError("Please send a PDF file for PDF to PDF/A conversion")
+        raise ValueError("Please send a PDF file for PDF to PDF/A conversion.")
 
     ghostscript_executable = _resolve_ghostscript_executable()
     if not ghostscript_executable:
-        raise ValueError("PDF to PDF/A needs Ghostscript installed on the machine")
+        raise ValueError("PDF to PDF/A is unavailable on this deployment because Ghostscript is not installed.")
 
     output_path = source_path.with_name(f"{source_path.stem}_pdfa.pdf")
     command = [
@@ -397,7 +397,7 @@ def convert_pdf_to_pdfa(source_path: Path) -> Path:
     ]
     subprocess.run(command, check=True, capture_output=True, timeout=300)
     if not output_path.exists():
-        raise ValueError("Ghostscript did not produce a PDF/A file")
+        raise ValueError("Ghostscript could not create the PDF/A file.")
     return output_path
 
 

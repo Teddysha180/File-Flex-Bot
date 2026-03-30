@@ -1,7 +1,8 @@
 import logging
 import os
 import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlsplit
 
 from telegram import Update
 from telegram.ext import (
@@ -32,25 +33,40 @@ logger = logging.getLogger(__name__)
 
 
 class HealthcheckHandler(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
+    @property
+    def _normalized_path(self) -> str:
+        return urlsplit(self.path).path
+
+    def _send_plain_response(self, status_code: int, body: bytes = b"", *, include_body: bool) -> None:
+        self.send_response(status_code)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Connection", "close")
+        self.end_headers()
+        if include_body and body:
+            self.wfile.write(body)
+
     def _respond(self, include_body: bool) -> None:
-        if self.path in {"/", "/health", "/healthz"}:
-            body = b"ok"
-            self.send_response(200)
-            self.send_header("Content-Type", "text/plain; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            if include_body:
-                self.wfile.write(body)
+        if self._normalized_path in {"/", "/health", "/healthz"}:
+            self._send_plain_response(200, b"ok", include_body=include_body)
             return
 
-        self.send_response(404)
-        self.end_headers()
+        self._send_plain_response(404, b"not found", include_body=include_body)
 
     def do_GET(self) -> None:  # noqa: N802
         self._respond(include_body=True)
 
     def do_HEAD(self) -> None:  # noqa: N802
         self._respond(include_body=False)
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        self.send_response(204)
+        self.send_header("Allow", "GET, HEAD, OPTIONS")
+        self.send_header("Content-Length", "0")
+        self.send_header("Connection", "close")
+        self.end_headers()
 
     def log_message(self, format: str, *args) -> None:
         return
@@ -70,7 +86,7 @@ def start_healthcheck_server() -> None:
     if not port:
         return
 
-    server = HTTPServer(("0.0.0.0", int(port)), HealthcheckHandler)
+    server = ThreadingHTTPServer(("0.0.0.0", int(port)), HealthcheckHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     logger.info("Healthcheck server started on port %s", port)

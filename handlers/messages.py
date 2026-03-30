@@ -1,0 +1,31 @@
+WELCOME_MESSAGE = (
+    "File Flex Bot\n\n"
+    "Simple file tools inside Telegram.\n\n"
+    "Main tools:\n"
+    "• Extract ZIP\n"
+    "• Compress Image\n"
+    "• Convert Files\n"
+    "• Rename File\n"
+    "• Merge PDF\n"
+    "• Split PDF"
+)
+
+HELP_MESSAGE = (
+    "How to use:\n\n"
+    "1. Tap a tool on the home keyboard.\n"
+    "2. Send the file.\n"
+    "3. If needed, send one extra input like a new name or page range.\n\n"
+    "Convert Files includes:\n"
+    "• JPG -> PDF\n"
+    "• Word -> PDF\n"
+    "• PowerPoint -> PDF\n"
+    "• Excel -> PDF\n"
+    "• HTML -> PDF\n"
+    "• PDF -> JPG\n"
+    "• PDF -> Word\n"
+    "• PDF -> PowerPoint\n"
+    "• PDF -> Excel\n"
+    "• PDF -> PDF/A\n"
+    "• JPG -> PNG\n"
+    "• PNG -> JPG"
+)

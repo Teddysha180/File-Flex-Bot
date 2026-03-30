@@ -27,6 +27,7 @@ from handlers.keyboards import (
     BTN_POWERPOINT_TO_PDF,
     BTN_WORD_TO_PDF,
     convert_keyboard,
+    convert_keyboard_for_buttons,
     home_keyboard,
     merge_keyboard,
 )
@@ -58,6 +59,9 @@ from utils.processing import (
     compress_image_file,
     convert_image_file,
     extract_zip_archive,
+    is_conversion_available,
+    is_ghostscript_available,
+    is_libreoffice_available,
     merge_pdf_files,
     rename_file_copy,
     split_pdf,
@@ -193,18 +197,27 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if text == BTN_CONVERT_FILES:
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
+        available_buttons = _available_conversion_buttons()
         await update.message.reply_text(
-            "Choose a conversion.",
-            reply_markup=convert_keyboard(),
+            _available_conversions_message(),
+            reply_markup=convert_keyboard_for_buttons(available_buttons),
         )
         return
 
     if text in CONVERSION_BUTTONS:
+        conversion_target = CONVERSION_BUTTONS[text]
+        if not is_conversion_available(conversion_target):
+            await update.message.reply_text(
+                _conversion_unavailable_message(conversion_target),
+                reply_markup=home_keyboard(),
+            )
+            return
+
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
-        context.user_data[STATE_KEY_CONVERSION_TARGET] = CONVERSION_BUTTONS[text]
+        context.user_data[STATE_KEY_CONVERSION_TARGET] = conversion_target
         await update.message.reply_text(
-            _conversion_prompt(CONVERSION_BUTTONS[text]),
+            _conversion_prompt(conversion_target),
             reply_markup=home_keyboard(),
         )
         return
@@ -470,3 +483,33 @@ def _conversion_prompt(conversion_target: str) -> str:
         "png_to_jpg": "Send a PNG file.",
     }
     return prompts.get(conversion_target, "Send the file.")
+
+
+def _available_conversion_buttons() -> list[str]:
+    return [
+        button
+        for button, conversion_target in CONVERSION_BUTTONS.items()
+        if is_conversion_available(conversion_target)
+    ]
+
+
+def _available_conversions_message() -> str:
+    lines = ["Choose a conversion."]
+
+    if not is_libreoffice_available():
+        lines.append("Office to PDF is hidden on this deployment.")
+
+    if not is_ghostscript_available():
+        lines.append("PDF to PDF/A is hidden on this deployment.")
+
+    return " ".join(lines)
+
+
+def _conversion_unavailable_message(conversion_target: str) -> str:
+    if conversion_target in {"word_to_pdf", "powerpoint_to_pdf", "excel_to_pdf", "html_to_pdf"}:
+        return "That conversion is not available on this deployment because LibreOffice is not installed."
+
+    if conversion_target == "pdf_to_pdfa":
+        return "That conversion is not available on this deployment because Ghostscript is not installed."
+
+    return "That conversion is not available on this deployment."

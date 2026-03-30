@@ -32,18 +32,25 @@ logger = logging.getLogger(__name__)
 
 
 class HealthcheckHandler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802
+    def _respond(self, include_body: bool) -> None:
         if self.path in {"/", "/health", "/healthz"}:
             body = b"ok"
             self.send_response(200)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
-            self.wfile.write(body)
+            if include_body:
+                self.wfile.write(body)
             return
 
         self.send_response(404)
         self.end_headers()
+
+    def do_GET(self) -> None:  # noqa: N802
+        self._respond(include_body=True)
+
+    def do_HEAD(self) -> None:  # noqa: N802
+        self._respond(include_body=False)
 
     def log_message(self, format: str, *args) -> None:
         return

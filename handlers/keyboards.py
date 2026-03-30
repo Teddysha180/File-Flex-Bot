@@ -39,16 +39,41 @@ def home_keyboard() -> ReplyKeyboardMarkup:
 
 
 def convert_keyboard() -> ReplyKeyboardMarkup:
-    return ReplyKeyboardMarkup(
+    return convert_keyboard_for_buttons(
         [
-            [KeyboardButton(BTN_JPG_TO_PDF), KeyboardButton(BTN_WORD_TO_PDF)],
-            [KeyboardButton(BTN_POWERPOINT_TO_PDF), KeyboardButton(BTN_EXCEL_TO_PDF)],
-            [KeyboardButton(BTN_HTML_TO_PDF), KeyboardButton(BTN_PDF_TO_JPG)],
-            [KeyboardButton(BTN_PDF_TO_WORD), KeyboardButton(BTN_PDF_TO_POWERPOINT)],
-            [KeyboardButton(BTN_PDF_TO_EXCEL), KeyboardButton(BTN_PDF_TO_PDFA)],
-            [KeyboardButton(BTN_JPG_TO_PNG), KeyboardButton(BTN_PNG_TO_JPG)],
-            [KeyboardButton(BTN_HOME)],
-        ],
+            BTN_JPG_TO_PDF,
+            BTN_WORD_TO_PDF,
+            BTN_POWERPOINT_TO_PDF,
+            BTN_EXCEL_TO_PDF,
+            BTN_HTML_TO_PDF,
+            BTN_PDF_TO_JPG,
+            BTN_PDF_TO_WORD,
+            BTN_PDF_TO_POWERPOINT,
+            BTN_PDF_TO_EXCEL,
+            BTN_PDF_TO_PDFA,
+            BTN_JPG_TO_PNG,
+            BTN_PNG_TO_JPG,
+        ]
+    )
+
+
+def convert_keyboard_for_buttons(buttons: list[str]) -> ReplyKeyboardMarkup:
+    rows: list[list[KeyboardButton]] = []
+    row: list[KeyboardButton] = []
+
+    for button in buttons:
+        row.append(KeyboardButton(button))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+
+    if row:
+        rows.append(row)
+
+    rows.append([KeyboardButton(BTN_HOME)])
+
+    return ReplyKeyboardMarkup(
+        rows,
         resize_keyboard=True,
         is_persistent=True,
     )

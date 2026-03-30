@@ -127,6 +127,29 @@ def _resolve_ghostscript_executable() -> str | None:
     return None
 
 
+def is_libreoffice_available() -> bool:
+    return _resolve_libreoffice_executable() is not None
+
+
+def is_ghostscript_available() -> bool:
+    return _resolve_ghostscript_executable() is not None
+
+
+def is_conversion_available(conversion_target: str) -> bool:
+    if conversion_target in {
+        "word_to_pdf",
+        "powerpoint_to_pdf",
+        "excel_to_pdf",
+        "html_to_pdf",
+    }:
+        return is_libreoffice_available()
+
+    if conversion_target == "pdf_to_pdfa":
+        return is_ghostscript_available()
+
+    return True
+
+
 def _convert_with_libreoffice(source_path: Path, target_extension: str, output_dir: Path) -> Path:
     libreoffice_executable = _resolve_libreoffice_executable()
     if not libreoffice_executable:

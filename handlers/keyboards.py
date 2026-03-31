@@ -10,6 +10,14 @@ BTN_SPLIT_PDF = "Split PDF"
 BTN_HELP = "Help & Support"
 BTN_HOME = "Back to Menu"
 BTN_DONE = "Finish"
+BTN_ADMIN_DASHBOARD = "Dashboard"
+BTN_ADMIN_STATUS = "Bot Status"
+BTN_ADMIN_ADMINS = "Admins"
+BTN_ADMIN_BROADCAST = "Broadcast"
+BTN_ADMIN_POST = "Post Broadcast"
+BTN_ADMIN_ADD_ADMIN = "Add Admin"
+BTN_ADMIN_REMOVE_ADMIN = "Remove Admin"
+BTN_ADMIN_CANCEL = "Cancel"
 
 BTN_JPG_TO_PDF = "JPG -> PDF"
 BTN_WORD_TO_PDF = "Word -> PDF"
@@ -83,6 +91,35 @@ def merge_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
             [KeyboardButton(BTN_DONE), KeyboardButton(BTN_HOME)],
+        ],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+
+
+def admin_keyboard(is_main_admin: bool) -> ReplyKeyboardMarkup:
+    rows = [
+        [KeyboardButton(BTN_ADMIN_DASHBOARD), KeyboardButton(BTN_ADMIN_STATUS)],
+        [KeyboardButton(BTN_ADMIN_ADMINS), KeyboardButton(BTN_ADMIN_BROADCAST)],
+    ]
+
+    if is_main_admin:
+        rows.append([KeyboardButton(BTN_ADMIN_ADD_ADMIN), KeyboardButton(BTN_ADMIN_REMOVE_ADMIN)])
+
+    rows.append([KeyboardButton(BTN_HOME), KeyboardButton(BTN_ADMIN_CANCEL)])
+
+    return ReplyKeyboardMarkup(
+        rows,
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+
+
+def broadcast_confirm_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        [
+            [KeyboardButton(BTN_ADMIN_POST), KeyboardButton(BTN_ADMIN_CANCEL)],
+            [KeyboardButton(BTN_HOME)],
         ],
         resize_keyboard=True,
         is_persistent=True,

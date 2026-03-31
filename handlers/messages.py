@@ -1,3 +1,15 @@
+from utils.config import config
+
+
+def _mb_label(size_in_bytes: int) -> str:
+    return f"{round(size_in_bytes / (1024 * 1024))} MB"
+
+
+INTRO_MESSAGE = (
+    "File Flex\n"
+    "Preparing your workspace..."
+)
+
 WELCOME_MESSAGE = (
     "File Flex\n\n"
     "A clean, fast file toolkit built for Telegram.\n\n"
@@ -8,7 +20,11 @@ WELCOME_MESSAGE = (
     "• Extract ZIP\n"
     "• Rename File\n"
     "• Merge PDFs\n"
-    "• Split PDF"
+    "• Split PDF\n\n"
+    "Upload limits:\n"
+    f"• Standard files: up to {_mb_label(config.MAX_FILE_SIZE)}\n"
+    f"• ZIP files: up to {_mb_label(config.ZIP_MAX_FILE_SIZE)}\n"
+    f"• ZIP extraction: up to {config.ZIP_MAX_EXTRACTED_FILES} files / {_mb_label(config.ZIP_MAX_EXTRACTED_SIZE)} total"
 )
 
 HELP_MESSAGE = (
@@ -22,5 +38,9 @@ HELP_MESSAGE = (
     "• Image formats: JPG -> PNG, PNG -> JPG\n\n"
     "Best results:\n"
     "• Send documents as files to preserve their original format.\n"
-    "• Use Back to Menu at any time to return to the main screen."
+    "• Use Back to Menu at any time to return to the main screen.\n\n"
+    "Upload limits:\n"
+    f"• Standard files: up to {_mb_label(config.MAX_FILE_SIZE)}\n"
+    f"• ZIP files: up to {_mb_label(config.ZIP_MAX_FILE_SIZE)}\n"
+    f"• ZIP extraction: up to {config.ZIP_MAX_EXTRACTED_FILES} files / {_mb_label(config.ZIP_MAX_EXTRACTED_SIZE)} total"
 )

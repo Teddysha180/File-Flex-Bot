@@ -1,6 +1,7 @@
 import logging
 import os
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
@@ -14,11 +15,13 @@ from telegram.ext import (
 )
 from dotenv import load_dotenv
 
+from handlers.admin import admin_command
 from handlers.commands import help_command, start_command
 from handlers.files import (
     handle_document,
     handle_photo,
     handle_text_input,
+    handle_video,
     unknown_handler,
 )
 from handlers.states import reset_user_state
@@ -103,10 +106,13 @@ def build_application() -> Application:
     application = Application.builder().token(token).build()
 
     application.bot_data["reset_state"] = reset_user_state
+    application.bot_data["started_at"] = time.time()
 
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("admin", admin_command))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(
         MessageHandler(filters.Document.ALL & ~filters.COMMAND, handle_document)
     )

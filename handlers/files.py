@@ -4,6 +4,13 @@ from pathlib import Path
 from telegram import InputFile, Update
 from telegram.ext import ContextTypes
 
+from handlers.admin import (
+    handle_admin_document,
+    handle_admin_photo,
+    handle_admin_text,
+    handle_admin_video,
+    register_user,
+)
 from handlers.keyboards import (
     BTN_COMPRESS_IMAGE,
     BTN_CONVERT_FILES,
@@ -47,6 +54,7 @@ from handlers.states import (
     STATE_KEY_PENDING_INPUT,
     reset_user_state,
 )
+from utils.config import config
 from utils.filesystem import (
     cleanup_paths,
     create_user_job_dir,
@@ -89,6 +97,11 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if not update.message or not update.message.photo:
         return
 
+    register_user(update)
+
+    if await handle_admin_photo(update, context):
+        return
+
     action = context.user_data.get(STATE_KEY_ACTION)
     if action not in {ACTION_COMPRESS_IMAGE, ACTION_CONVERT_FILE}:
         await update.message.reply_text(
@@ -101,6 +114,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     input_path = job_dir / "photo_input.jpg"
 
     try:
+        _validate_upload_size(update.message.photo[-1].file_size, config.MAX_FILE_SIZE)
         await download_photo_to_path(update.message.photo[-1], input_path)
         await _process_file_action(update, context, input_path)
     except Exception:
@@ -114,6 +128,11 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.document:
+        return
+
+    register_user(update)
+
+    if await handle_admin_document(update, context):
         return
 
     action = context.user_data.get(STATE_KEY_ACTION)
@@ -130,6 +149,8 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     input_path = job_dir / file_name
 
     try:
+        max_size = config.ZIP_MAX_FILE_SIZE if action == ACTION_EXTRACT_ZIP else config.MAX_FILE_SIZE
+        _validate_upload_size(document.file_size, max_size, is_zip=action == ACTION_EXTRACT_ZIP)
         await download_document_to_path(document, input_path)
 
         if action == ACTION_RENAME_FILE:
@@ -181,6 +202,11 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if not update.message or not update.message.text:
         return
 
+    register_user(update)
+
+    if await handle_admin_text(update, context):
+        return
+
     text = update.message.text.strip()
 
     if text == BTN_HOME:
@@ -224,19 +250,28 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if text == BTN_EXTRACT_ZIP:
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_EXTRACT_ZIP
-        await update.message.reply_text("Send the ZIP file you want to extract.", reply_markup=home_keyboard())
+        await update.message.reply_text(
+            f"Send the ZIP file you want to extract.\n\nZIP limit: {round(config.ZIP_MAX_FILE_SIZE / (1024 * 1024))} MB.",
+            reply_markup=home_keyboard(),
+        )
         return
 
     if text == BTN_COMPRESS_IMAGE:
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_COMPRESS_IMAGE
-        await update.message.reply_text("Send a JPG or PNG image to compress.", reply_markup=home_keyboard())
+        await update.message.reply_text(
+            f"Send a JPG or PNG image to compress.\n\nFile limit: {round(config.MAX_FILE_SIZE / (1024 * 1024))} MB.",
+            reply_markup=home_keyboard(),
+        )
         return
 
     if text == BTN_RENAME_FILE:
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_RENAME_FILE
-        await update.message.reply_text("Send the file you want to rename.", reply_markup=home_keyboard())
+        await update.message.reply_text(
+            f"Send the file you want to rename.\n\nFile limit: {round(config.MAX_FILE_SIZE / (1024 * 1024))} MB.",
+            reply_markup=home_keyboard(),
+        )
         return
 
     if text == BTN_MERGE_PDF:
@@ -244,7 +279,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ACTION] = ACTION_MERGE_PDF
         context.user_data[STATE_KEY_PENDING_FILES] = []
         await update.message.reply_text(
-            "Send PDF files one by one, then tap Finish when you're ready.",
+            f"Send PDF files one by one, then tap Finish when you're ready.\n\nPer-file limit: {round(config.MAX_FILE_SIZE / (1024 * 1024))} MB.",
             reply_markup=merge_keyboard(),
         )
         return
@@ -252,7 +287,10 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if text == BTN_SPLIT_PDF:
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_SPLIT_PDF
-        await update.message.reply_text("Send the PDF you want to split.", reply_markup=home_keyboard())
+        await update.message.reply_text(
+            f"Send the PDF you want to split.\n\nFile limit: {round(config.MAX_FILE_SIZE / (1024 * 1024))} MB.",
+            reply_markup=home_keyboard(),
+        )
         return
 
     if text == BTN_DONE:
@@ -278,11 +316,27 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def unknown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    register_user(update)
     if update.message:
         await update.message.reply_text(
             "Use the main menu to choose a tool.",
             reply_markup=home_keyboard(),
         )
+
+
+async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message or not update.message.video:
+        return
+
+    register_user(update)
+
+    if await handle_admin_video(update, context):
+        return
+
+    await update.message.reply_text(
+        "Video uploads are only supported in the admin broadcast flow right now.",
+        reply_markup=home_keyboard(),
+    )
 
 
 async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYPE, input_path: Path) -> None:
@@ -441,6 +495,17 @@ def _get_or_create_job_dir(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return job_dir
 
 
+def _validate_upload_size(file_size: int | None, max_size: int, *, is_zip: bool = False) -> None:
+    if file_size is None or file_size <= max_size:
+        return
+
+    size_label = round(max_size / (1024 * 1024))
+    if is_zip:
+        raise ValueError(f"ZIP files can be up to {size_label} MB.")
+
+    raise ValueError(f"Files can be up to {size_label} MB.")
+
+
 def _validate_conversion_input(input_path: Path, conversion_target: str) -> None:
     suffix = input_path.suffix.lower()
 
@@ -481,7 +546,8 @@ def _conversion_prompt(conversion_target: str) -> str:
         "jpg_to_png": "Send a JPG image to convert to PNG.",
         "png_to_jpg": "Send a PNG file to convert to JPG.",
     }
-    return prompts.get(conversion_target, "Send the file you want to convert.")
+    base_prompt = prompts.get(conversion_target, "Send the file you want to convert.")
+    return f"{base_prompt}\n\nFile limit: {round(config.MAX_FILE_SIZE / (1024 * 1024))} MB."
 
 
 def _available_conversion_buttons() -> list[str]:

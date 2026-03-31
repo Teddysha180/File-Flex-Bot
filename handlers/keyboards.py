@@ -18,6 +18,7 @@ BTN_ADMIN_POST = "Post Broadcast"
 BTN_ADMIN_ADD_ADMIN = "Add Admin"
 BTN_ADMIN_REMOVE_ADMIN = "Remove Admin"
 BTN_ADMIN_CANCEL = "Cancel"
+BTN_JOINED = "I Joined"
 
 BTN_JPG_TO_PDF = "JPG -> PDF"
 BTN_WORD_TO_PDF = "Word -> PDF"
@@ -121,6 +122,14 @@ def broadcast_confirm_keyboard() -> ReplyKeyboardMarkup:
             [KeyboardButton(BTN_ADMIN_POST), KeyboardButton(BTN_ADMIN_CANCEL)],
             [KeyboardButton(BTN_HOME)],
         ],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
+
+
+def joined_keyboard() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        [[KeyboardButton(BTN_JOINED)]],
         resize_keyboard=True,
         is_persistent=True,
     )

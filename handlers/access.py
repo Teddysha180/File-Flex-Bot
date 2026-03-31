@@ -2,6 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from handlers.admin import is_admin_user
+from handlers.keyboards import joined_keyboard
 from utils.config import config
 
 
@@ -26,10 +27,13 @@ async def ensure_channel_membership(update: Update, context: ContextTypes.DEFAUL
         [[InlineKeyboardButton("Join Channel", url=config.REQUIRED_CHANNEL_URL)]]
     )
     await message.reply_text(
-        "Access required\n\n"
-        "Join our channel first to use File Flex.\n\n"
-        "Channel: arts_of_drawings\n"
-        "After joining, come back and send /start again.",
+        "Join Required\n\n"
+        "Please join our channel first to use this bot.\n"
+        "After joining, tap I Joined to continue.",
         reply_markup=join_keyboard,
+    )
+    await message.reply_text(
+        "Tap the button below after you join.",
+        reply_markup=joined_keyboard(),
     )
     return False

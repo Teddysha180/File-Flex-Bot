@@ -7,8 +7,8 @@ BTN_CONVERT_FILES = "Convert Files"
 BTN_RENAME_FILE = "Rename File"
 BTN_MERGE_PDF = "Merge PDFs"
 BTN_SPLIT_PDF = "Split PDF"
-BTN_HELP = "Help"
-BTN_HOME = "Home"
+BTN_HELP = "Help & Support"
+BTN_HOME = "Back to Menu"
 BTN_DONE = "Finish"
 
 BTN_JPG_TO_PDF = "JPG -> PDF"
@@ -28,10 +28,10 @@ BTN_PNG_TO_JPG = "PNG -> JPG"
 def home_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         [
-            [KeyboardButton(BTN_EXTRACT_ZIP), KeyboardButton(BTN_COMPRESS_IMAGE)],
-            [KeyboardButton(BTN_CONVERT_FILES), KeyboardButton(BTN_RENAME_FILE)],
+            [KeyboardButton(BTN_CONVERT_FILES), KeyboardButton(BTN_COMPRESS_IMAGE)],
+            [KeyboardButton(BTN_EXTRACT_ZIP), KeyboardButton(BTN_RENAME_FILE)],
             [KeyboardButton(BTN_MERGE_PDF), KeyboardButton(BTN_SPLIT_PDF)],
-            [KeyboardButton(BTN_HELP), KeyboardButton(BTN_HOME)],
+            [KeyboardButton(BTN_HELP)],
         ],
         resize_keyboard=True,
         is_persistent=True,

@@ -92,7 +92,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     action = context.user_data.get(STATE_KEY_ACTION)
     if action not in {ACTION_COMPRESS_IMAGE, ACTION_CONVERT_FILE}:
         await update.message.reply_text(
-            "Choose a tool from the menu below first.",
+            "Choose a tool from the main menu first.",
             reply_markup=home_keyboard(),
         )
         return
@@ -119,7 +119,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     action = context.user_data.get(STATE_KEY_ACTION)
     if not action:
         await update.message.reply_text(
-            "Choose a tool from the menu below first.",
+            "Choose a tool from the main menu first.",
             reply_markup=home_keyboard(),
         )
         return
@@ -136,7 +136,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             context.user_data[STATE_KEY_PENDING_FILE] = str(input_path)
             context.user_data[STATE_KEY_PENDING_EXTENSION] = Path(file_name).suffix
             await update.message.reply_text(
-                "Send the new file name.",
+                "Send the new file name you want to use.",
                 reply_markup=home_keyboard(),
             )
             return
@@ -147,7 +147,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             pending_files = context.user_data.setdefault(STATE_KEY_PENDING_FILES, [])
             pending_files.append(str(input_path))
             await update.message.reply_text(
-                f"PDF added. Total files: {len(pending_files)}. Tap Finish when you're ready.",
+                f"PDF added. Total files: {len(pending_files)}. Tap Finish when you're ready to merge.",
                 reply_markup=merge_keyboard(),
             )
             return
@@ -156,7 +156,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             context.user_data[STATE_KEY_PENDING_FILE] = str(input_path)
             context.user_data[STATE_KEY_PENDING_INPUT] = "range"
             await update.message.reply_text(
-                "Send the page range in this format: 1-3",
+                "Send the page range in this format: 1-3.",
                 reply_markup=home_keyboard(),
             )
             return
@@ -185,7 +185,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     if text == BTN_HOME:
         reset_user_state(context.user_data)
-        await update.message.reply_text("Main menu ready.", reply_markup=home_keyboard())
+        await update.message.reply_text("Back at the main menu.", reply_markup=home_keyboard())
         return
 
     if text == BTN_HELP:
@@ -244,7 +244,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ACTION] = ACTION_MERGE_PDF
         context.user_data[STATE_KEY_PENDING_FILES] = []
         await update.message.reply_text(
-            "Send PDF files one by one, then tap Finish.",
+            "Send PDF files one by one, then tap Finish when you're ready.",
             reply_markup=merge_keyboard(),
         )
         return
@@ -272,7 +272,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
 
     await update.message.reply_text(
-        "Choose a tool from the menu below.",
+        "Choose a tool from the main menu.",
         reply_markup=home_keyboard(),
     )
 
@@ -280,7 +280,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 async def unknown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.message:
         await update.message.reply_text(
-            "Use the menu below to choose a tool.",
+            "Use the main menu to choose a tool.",
             reply_markup=home_keyboard(),
         )
 
@@ -381,7 +381,7 @@ async def _finish_split(update: Update, context: ContextTypes.DEFAULT_TYPE, text
 
     try:
         if "-" not in text:
-            raise ValueError("Send the page range in this format: 1-3")
+            raise ValueError("Send the page range in this format: 1-3.")
         start_text, end_text = text.split("-", 1)
         start_page = int(start_text.strip())
         end_page = int(end_text.strip())
@@ -493,22 +493,41 @@ def _available_conversion_buttons() -> list[str]:
 
 
 def _available_conversions_message() -> str:
-    lines = ["Choose a conversion below."]
+    lines = [
+        "Choose a conversion below.",
+        "",
+        "To PDF: JPG, Word, PowerPoint, Excel, HTML",
+        "From PDF: JPG, Word, PowerPoint, Excel, PDF/A",
+        "Image Formats: JPG -> PNG, PNG -> JPG",
+    ]
 
     if not is_libreoffice_available():
-        lines.append("Office-to-PDF options are hidden on this deployment.")
+        lines.extend(
+            [
+                "",
+                "Office-to-PDF options are hidden on this deployment.",
+            ]
+        )
 
     if not is_ghostscript_available():
         lines.append("PDF to PDF/A is hidden on this deployment.")
 
-    return " ".join(lines)
+    lines.extend(["", "Use Back to Menu any time to return to the main screen."])
+
+    return "\n".join(lines)
 
 
 def _conversion_unavailable_message(conversion_target: str) -> str:
     if conversion_target in {"word_to_pdf", "powerpoint_to_pdf", "excel_to_pdf", "html_to_pdf"}:
-        return "That conversion is not available on this deployment because LibreOffice is not installed."
+        return (
+            "That conversion is currently unavailable on this deployment.\n\n"
+            "LibreOffice is not installed on the running server yet."
+        )
 
     if conversion_target == "pdf_to_pdfa":
-        return "That conversion is not available on this deployment because Ghostscript is not installed."
+        return (
+            "That conversion is currently unavailable on this deployment.\n\n"
+            "Ghostscript is not installed on the running server yet."
+        )
 
-    return "That conversion is not available on this deployment."
+    return "That conversion is currently unavailable on this deployment."

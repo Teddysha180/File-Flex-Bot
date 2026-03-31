@@ -11,6 +11,7 @@ from handlers.admin import (
     handle_admin_video,
     register_user,
 )
+from handlers.access import ensure_channel_membership
 from handlers.keyboards import (
     BTN_COMPRESS_IMAGE,
     BTN_CONVERT_FILES,
@@ -99,6 +100,9 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     register_user(update)
 
+    if not await ensure_channel_membership(update, context):
+        return
+
     if await handle_admin_photo(update, context):
         return
 
@@ -131,6 +135,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
 
     register_user(update)
+
+    if not await ensure_channel_membership(update, context):
+        return
 
     if await handle_admin_document(update, context):
         return
@@ -203,6 +210,9 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
 
     register_user(update)
+
+    if not await ensure_channel_membership(update, context):
+        return
 
     if await handle_admin_text(update, context):
         return
@@ -317,6 +327,8 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 async def unknown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     register_user(update)
+    if not await ensure_channel_membership(update, context):
+        return
     if update.message:
         await update.message.reply_text(
             "Use the main menu to choose a tool.",
@@ -329,6 +341,9 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     register_user(update)
+
+    if not await ensure_channel_membership(update, context):
+        return
 
     if await handle_admin_video(update, context):
         return

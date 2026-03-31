@@ -19,7 +19,6 @@ from handlers.keyboards import (
     BTN_EXTRACT_ZIP,
     BTN_HELP,
     BTN_HOME,
-    BTN_JOINED,
     BTN_MERGE_PDF,
     BTN_RENAME_FILE,
     BTN_SPLIT_PDF,
@@ -223,13 +222,6 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if text == BTN_HOME:
         reset_user_state(context.user_data)
         await update.message.reply_text("Back at the main menu.", reply_markup=home_keyboard())
-        return
-
-    if text == BTN_JOINED:
-        if not await ensure_channel_membership(update, context):
-            return
-        reset_user_state(context.user_data)
-        await update.message.reply_text("Access confirmed. Welcome back.", reply_markup=home_keyboard())
         return
 
     if text == BTN_HELP:

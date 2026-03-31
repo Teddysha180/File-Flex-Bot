@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 from telegram import Update
 from telegram.ext import (
     Application,
+    CallbackQueryHandler,
     CommandHandler,
     ContextTypes,
     MessageHandler,
@@ -16,6 +17,7 @@ from telegram.ext import (
 from dotenv import load_dotenv
 
 from handlers.admin import admin_command
+from handlers.access import JOIN_CHECK_CALLBACK, handle_join_check_callback
 from handlers.commands import help_command, start_command
 from handlers.files import (
     handle_document,
@@ -111,6 +113,7 @@ def build_application() -> Application:
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("admin", admin_command))
+    application.add_handler(CallbackQueryHandler(handle_join_check_callback, pattern=f"^{JOIN_CHECK_CALLBACK}$"))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(
@@ -129,7 +132,7 @@ def main() -> None:
     start_healthcheck_server()
     application = build_application()
     logger.info("Starting Telegram File Tools Bot with polling.")
-    application.run_polling(allowed_updates=["message"])
+    application.run_polling(allowed_updates=["message", "callback_query"])
 
 
 if __name__ == "__main__":

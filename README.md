@@ -38,6 +38,7 @@ pip install -r requirements.txt
 
 ```env
 BOT_TOKEN=your-telegram-bot-token
+DATABASE_URL=your-postgres-connection-string
 ```
 
 3. Start the bot:
@@ -100,3 +101,4 @@ Recommended monitor:
 - Files are stored temporarily in `downloads/` and cleaned up after processing
 - Polling is used, so no Telegram webhook setup is required
 - Docker deployment includes LibreOffice and Ghostscript for the Office/PDF conversions above
+- For free persistent bot memory, set `DATABASE_URL` to an external Postgres database

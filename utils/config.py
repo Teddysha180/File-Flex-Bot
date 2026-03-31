@@ -7,7 +7,10 @@ class Config:
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     ADMIN_IDS = [int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
     
-    MAX_FILE_SIZE = 100 * 1024 * 1024
+    MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE_MB", "50")) * 1024 * 1024
+    ZIP_MAX_FILE_SIZE = int(os.getenv("ZIP_MAX_FILE_SIZE_MB", "50")) * 1024 * 1024
+    ZIP_MAX_EXTRACTED_SIZE = int(os.getenv("ZIP_MAX_EXTRACTED_SIZE_MB", "200")) * 1024 * 1024
+    ZIP_MAX_EXTRACTED_FILES = int(os.getenv("ZIP_MAX_EXTRACTED_FILES", "100"))
     COMPRESSION_QUALITY = 65
     IMAGE_QUALITY = 90
     

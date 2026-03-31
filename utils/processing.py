@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 
 from PIL import Image, ImageDraw, ImageFont, ImageEnhance
 from PyPDF2 import PdfReader, PdfWriter
+from utils.config import config
 
 try:
     import cv2
@@ -177,6 +178,19 @@ def extract_zip_archive(zip_path: Path, output_dir: Path) -> list[Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        file_members = [member for member in zip_ref.infolist() if not member.is_dir()]
+        if len(file_members) > config.ZIP_MAX_EXTRACTED_FILES:
+            raise ValueError(
+                f"This ZIP contains too many files. The limit is {config.ZIP_MAX_EXTRACTED_FILES} files."
+            )
+
+        total_uncompressed_size = sum(member.file_size for member in file_members)
+        if total_uncompressed_size > config.ZIP_MAX_EXTRACTED_SIZE:
+            limit_mb = round(config.ZIP_MAX_EXTRACTED_SIZE / (1024 * 1024))
+            raise ValueError(
+                f"This ZIP expands beyond the allowed limit of {limit_mb} MB after extraction."
+            )
+
         for member in zip_ref.infolist():
             member_path = output_dir / member.filename
             resolved_output_dir = output_dir.resolve()
@@ -492,7 +506,7 @@ def extract_text_from_image(source_path: Path) -> str:
 
     try:
         image = Image.open(source_path)
-        text = pytesseract.image_to_string(image)
+        text = pytesseract.image_to_string(image, lang="eng+amh")
         return text
     except Exception as e:
         raise ValueError(f"Failed to extract text from image: {str(e)}")

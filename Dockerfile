@@ -10,6 +10,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice \
     ghostscript \
     fonts-dejavu-core \
+    fonts-noto-core \
+    fonts-noto-extra \
+    fontconfig \
+    tesseract-ocr \
+    tesseract-ocr-amh \
     libgl1 \
     libglib2.0-0 \
     libsm6 \

@@ -62,16 +62,24 @@ git push -u origin main
 
 ## Render
 
-This repo now includes [render.yaml](./render.yaml) so Render can deploy it directly from GitHub.
+This repo is configured for a Docker-based Render deploy so system tools are available in production.
+
+Included in the container:
+- LibreOffice
+- Ghostscript
+
+That means these conversions can run on Render:
+- Word -> PDF
+- PowerPoint -> PDF
+- Excel -> PDF
+- HTML -> PDF
+- PDF -> PDF/A
 
 Recommended setup:
 - Create a new Web Service from the GitHub repo
-- Render will detect `render.yaml`
-- Set `BOT_TOKEN` in Render dashboard
-
-Render commands:
-- Build: `pip install -r requirements.txt`
-- Start: `python bot.py`
+- Render will detect [render.yaml](./render.yaml)
+- Set `BOT_TOKEN` in the Render dashboard
+- Let Render build from the included [Dockerfile](./Dockerfile)
 
 The bot also starts a tiny health endpoint on Render using the `PORT` environment variable:
 - `/`
@@ -91,6 +99,4 @@ Recommended monitor:
 
 - Files are stored temporarily in `downloads/` and cleaned up after processing
 - Polling is used, so no Telegram webhook setup is required
-- Some conversions still depend on local system tools:
-  - LibreOffice for Office -> PDF
-  - Ghostscript for PDF -> PDF/A
+- Docker deployment includes LibreOffice and Ghostscript for the Office/PDF conversions above

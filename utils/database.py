@@ -1,16 +1,21 @@
+import os
 import sqlite3
 import json
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 
+from utils.config import config
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "bot_database.db"
+DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR))).resolve()
+DB_PATH = DATA_DIR / "bot_database.db"
 
 
 class UserDatabase:
     def __init__(self, db_path: Path = DB_PATH):
         self.db_path = db_path
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
 
     def _init_db(self) -> None:
@@ -55,6 +60,19 @@ class UserDatabase:
                     FOREIGN KEY(user_id) REFERENCES users(user_id)
                 )
             """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS admins (
+                    user_id INTEGER PRIMARY KEY,
+                    added_by INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cursor.execute("""
+                INSERT OR IGNORE INTO admins (user_id, added_by)
+                VALUES (?, ?)
+            """, (config.MAIN_ADMIN_ID, config.MAIN_ADMIN_ID))
             
             conn.commit()
 
@@ -81,7 +99,114 @@ class UserDatabase:
                 "user_id": user[0],
                 "username": user[1],
                 "first_name": user[2],
-                "total_files_processed": user[4]
+                "total_files_processed": user[5]
+            }
+
+    def is_admin(self, user_id: int) -> bool:
+        if user_id == config.MAIN_ADMIN_ID:
+            return True
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1 FROM admins WHERE user_id = ?", (user_id,))
+            return cursor.fetchone() is not None
+
+    def add_admin(self, user_id: int, added_by: int) -> None:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR IGNORE INTO admins (user_id, added_by)
+                VALUES (?, ?)
+            """, (user_id, added_by))
+            conn.commit()
+
+    def remove_admin(self, user_id: int) -> bool:
+        if user_id == config.MAIN_ADMIN_ID:
+            return False
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM admins WHERE user_id = ?", (user_id,))
+            deleted = cursor.rowcount > 0
+            conn.commit()
+            return deleted
+
+    def list_admin_ids(self) -> list[int]:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT user_id FROM admins ORDER BY created_at ASC")
+            return [row[0] for row in cursor.fetchall()]
+
+    def list_admins(self) -> list[dict[str, Any]]:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT a.user_id, u.username, u.first_name, a.added_by, a.created_at
+                FROM admins a
+                LEFT JOIN users u ON u.user_id = a.user_id
+                ORDER BY a.created_at ASC
+            """)
+            admins = []
+            for row in cursor.fetchall():
+                admins.append({
+                    "user_id": row[0],
+                    "username": row[1] or "",
+                    "first_name": row[2] or "",
+                    "added_by": row[3],
+                    "created_at": row[4],
+                    "is_main_admin": row[0] == config.MAIN_ADMIN_ID,
+                })
+            return admins
+
+    def get_all_user_ids(self) -> list[int]:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT user_id FROM users ORDER BY created_at ASC")
+            return [row[0] for row in cursor.fetchall()]
+
+    def get_dashboard_stats(self) -> dict[str, Any]:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT COUNT(*) FROM users")
+            total_users = cursor.fetchone()[0]
+
+            cursor.execute("""
+                SELECT COUNT(*) FROM users
+                WHERE datetime(created_at) >= datetime('now', 'start of day')
+            """)
+            new_users_today = cursor.fetchone()[0]
+
+            cursor.execute("""
+                SELECT COUNT(*) FROM users
+                WHERE datetime(created_at) >= datetime('now', '-7 days')
+            """)
+            new_users_week = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM admins")
+            total_admins = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM processing_history")
+            total_jobs = cursor.fetchone()[0]
+
+            cursor.execute("""
+                SELECT COUNT(*) FROM processing_history
+                WHERE datetime(timestamp) >= datetime('now', 'start of day')
+            """)
+            jobs_today = cursor.fetchone()[0]
+
+            cursor.execute("""
+                SELECT COUNT(*) FROM processing_history
+                WHERE datetime(timestamp) >= datetime('now', '-7 days')
+            """)
+            jobs_week = cursor.fetchone()[0]
+
+            return {
+                "total_users": total_users,
+                "new_users_today": new_users_today,
+                "new_users_week": new_users_week,
+                "total_admins": total_admins,
+                "total_jobs": total_jobs,
+                "jobs_today": jobs_today,
+                "jobs_week": jobs_week,
             }
 
     def log_processing(self, user_id: int, action: str, input_file: str, output_file: str,

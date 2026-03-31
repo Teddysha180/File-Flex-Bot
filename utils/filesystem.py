@@ -1,3 +1,4 @@
+import os
 import shutil
 import uuid
 from pathlib import Path
@@ -6,10 +7,12 @@ from telegram import Document, PhotoSize, Video
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DOWNLOAD_DIR = BASE_DIR / "downloads"
+DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR))).resolve()
+DOWNLOAD_DIR = DATA_DIR / "downloads"
 
 
 def ensure_download_dir() -> Path:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
     return DOWNLOAD_DIR
 

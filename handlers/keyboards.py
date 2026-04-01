@@ -1,36 +1,36 @@
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
 
-BTN_EXTRACT_ZIP = "Extract ZIP"
-BTN_COMPRESS_IMAGE = "Compress Image"
-BTN_CONVERT_FILES = "Convert Files"
-BTN_RENAME_FILE = "Rename File"
-BTN_MERGE_PDF = "Merge PDFs"
-BTN_SPLIT_PDF = "Split PDF"
-BTN_HELP = "Help & Support"
-BTN_HOME = "Back to Menu"
-BTN_DONE = "Finish"
-BTN_ADMIN_DASHBOARD = "Dashboard"
-BTN_ADMIN_STATUS = "Bot Status"
-BTN_ADMIN_ADMINS = "Admins"
-BTN_ADMIN_BROADCAST = "Broadcast"
-BTN_ADMIN_POST = "Post Broadcast"
+BTN_EXTRACT_ZIP = "Archive Unpack"
+BTN_COMPRESS_IMAGE = "Image Compress"
+BTN_CONVERT_FILES = "File Convert"
+BTN_RENAME_FILE = "File Rename"
+BTN_MERGE_PDF = "PDF Merge"
+BTN_SPLIT_PDF = "PDF Split"
+BTN_HELP = "Help Center"
+BTN_HOME = "Main Menu"
+BTN_DONE = "Create Now"
+BTN_ADMIN_DASHBOARD = "Overview"
+BTN_ADMIN_STATUS = "System Status"
+BTN_ADMIN_ADMINS = "Admin Team"
+BTN_ADMIN_BROADCAST = "Broadcast Flow"
+BTN_ADMIN_POST = "Send Broadcast"
 BTN_ADMIN_ADD_ADMIN = "Add Admin"
 BTN_ADMIN_REMOVE_ADMIN = "Remove Admin"
-BTN_ADMIN_CANCEL = "Cancel"
+BTN_ADMIN_CANCEL = "Cancel Action"
 
-BTN_JPG_TO_PDF = "JPG -> PDF"
-BTN_WORD_TO_PDF = "Word -> PDF"
-BTN_POWERPOINT_TO_PDF = "PowerPoint -> PDF"
-BTN_EXCEL_TO_PDF = "Excel -> PDF"
-BTN_HTML_TO_PDF = "HTML -> PDF"
-BTN_PDF_TO_JPG = "PDF -> JPG"
-BTN_PDF_TO_WORD = "PDF -> Word"
-BTN_PDF_TO_POWERPOINT = "PDF -> PowerPoint"
-BTN_PDF_TO_EXCEL = "PDF -> Excel"
-BTN_PDF_TO_PDFA = "PDF -> PDF/A"
-BTN_JPG_TO_PNG = "JPG -> PNG"
-BTN_PNG_TO_JPG = "PNG -> JPG"
+BTN_JPG_TO_PDF = "JPG to PDF"
+BTN_WORD_TO_PDF = "Word to PDF"
+BTN_POWERPOINT_TO_PDF = "Slides to PDF"
+BTN_EXCEL_TO_PDF = "Sheet to PDF"
+BTN_HTML_TO_PDF = "HTML to PDF"
+BTN_PDF_TO_JPG = "PDF to JPG"
+BTN_PDF_TO_WORD = "PDF to Word"
+BTN_PDF_TO_POWERPOINT = "PDF to Slides"
+BTN_PDF_TO_EXCEL = "PDF to Sheet"
+BTN_PDF_TO_PDFA = "PDF to PDF/A"
+BTN_JPG_TO_PNG = "JPG to PNG"
+BTN_PNG_TO_JPG = "PNG to JPG"
 
 
 def home_keyboard() -> ReplyKeyboardMarkup:
@@ -43,6 +43,7 @@ def home_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
         is_persistent=True,
+        input_field_placeholder="Choose a file tool",
     )
 
 
@@ -84,6 +85,7 @@ def convert_keyboard_for_buttons(buttons: list[str]) -> ReplyKeyboardMarkup:
         rows,
         resize_keyboard=True,
         is_persistent=True,
+        input_field_placeholder="Choose a conversion flow",
     )
 
 
@@ -94,6 +96,7 @@ def merge_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
         is_persistent=True,
+        input_field_placeholder="Send files, then create",
     )
 
 
@@ -112,6 +115,7 @@ def admin_keyboard(is_main_admin: bool) -> ReplyKeyboardMarkup:
         rows,
         resize_keyboard=True,
         is_persistent=True,
+        input_field_placeholder="Choose an admin action",
     )
 
 
@@ -123,4 +127,5 @@ def broadcast_confirm_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
         is_persistent=True,
+        input_field_placeholder="Send or cancel the broadcast",
     )

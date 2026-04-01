@@ -63,7 +63,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     user_id = update.effective_user.id if update.effective_user else None
     if not is_admin_user(user_id):
         if update.message:
-            await update.message.reply_text("You are not allowed to access the admin panel.")
+            await update.message.reply_text("You don't have access to the admin workspace.")
         return
 
     reset_user_state(context.user_data)
@@ -114,15 +114,15 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CONTENT
         await update.message.reply_text(
-            "Broadcast setup\n\n"
+            "Broadcast Composer\n\n"
             "Step 1 of 3\n"
-            "Send the post content now.\n\n"
-            "Supported:\n"
+            "Send the content for the post now.\n\n"
+            "Supported formats:\n"
             "• Text message\n"
             "• Photo\n"
             "• Video\n"
             "• Document\n\n"
-            "If you send media, you can include a caption.",
+            "If you send media, you can include the caption right away.",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
         return True
@@ -131,7 +131,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_ADD_ADMIN
         await update.message.reply_text(
-            "Send the Telegram user ID you want to add as an admin.",
+            "Send the Telegram user ID you want to promote to admin.",
             reply_markup=admin_keyboard(True),
         )
         return True
@@ -140,7 +140,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_REMOVE_ADMIN
         await update.message.reply_text(
-            "Send the Telegram user ID you want to remove from admins.",
+            "Send the Telegram user ID you want to remove from the admin team.",
             reply_markup=admin_keyboard(True),
         )
         return True
@@ -148,7 +148,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if text == BTN_ADMIN_CANCEL:
         reset_user_state(context.user_data)
         await update.message.reply_text(
-            "Admin action cancelled.",
+            "Admin action canceled. You're back in the admin workspace.",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
         return True
@@ -163,7 +163,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                 parse_mode="Markdown",
             )
         except ValueError:
-            await update.message.reply_text("Send a valid numeric user ID.")
+            await update.message.reply_text("Send a valid numeric Telegram user ID.")
         finally:
             reset_user_state(context.user_data)
         return True
@@ -172,14 +172,14 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         try:
             admin_id = int(text)
             removed = db.remove_admin(admin_id)
-            message = f"Admin removed: `{admin_id}`" if removed else "That admin was not found or cannot be removed."
+            message = f"Admin removed: `{admin_id}`" if removed else "That admin account wasn't found or can't be removed."
             await update.message.reply_text(
                 message,
                 reply_markup=admin_keyboard(True),
                 parse_mode="Markdown",
             )
         except ValueError:
-            await update.message.reply_text("Send a valid numeric user ID.")
+            await update.message.reply_text("Send a valid numeric Telegram user ID.")
         finally:
             reset_user_state(context.user_data)
         return True
@@ -190,9 +190,9 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
             "Step 2 of 3\n"
-            "Send an inline button in this format:\n"
+            "Send the call-to-action button in this format:\n"
             "`Button Text | https://example.com`\n\n"
-            "Or send `skip` to post without a button.",
+            "Or send `skip` to publish without a button.",
             parse_mode="Markdown",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
@@ -203,9 +203,9 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
             "Step 2 of 3\n"
-            "Send an inline button in this format:\n"
+            "Send the call-to-action button in this format:\n"
             "`Button Text | https://example.com`\n\n"
-            "Or send `skip` to post without a button.",
+            "Or send `skip` to publish without a button.",
             parse_mode="Markdown",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
@@ -218,14 +218,14 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         else:
             if "|" not in text:
                 await update.message.reply_text(
-                    "Send the button in this format:\n`Button Text | https://example.com`\n\nOr send `skip`.",
+                    "Use this button format:\n`Button Text | https://example.com`\n\nOr send `skip`.",
                     parse_mode="Markdown",
                 )
                 return True
             button_text, button_url = [part.strip() for part in text.split("|", 1)]
             if not button_text or not button_url.startswith(("http://", "https://")):
                 await update.message.reply_text(
-                    "The button format is invalid. Use:\n`Button Text | https://example.com`",
+                    "That button format doesn't look valid. Use:\n`Button Text | https://example.com`",
                     parse_mode="Markdown",
                 )
                 return True
@@ -235,7 +235,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CONFIRM
         await _send_broadcast_preview(update, context)
         await update.message.reply_text(
-            "Step 3 of 3\nPreview ready.\n\nTap `Post Broadcast` to send it to all users, or `Cancel` to discard it.",
+            "Step 3 of 3\nPreview ready.\n\nTap `Send Broadcast` to deliver it to all users, or `Cancel Action` to discard it.",
             parse_mode="Markdown",
             reply_markup=broadcast_confirm_keyboard(),
         )
@@ -265,16 +265,16 @@ async def handle_admin_photo(update: Update, context: ContextTypes.DEFAULT_TYPE)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
             "Step 2 of 3\n"
-            "Send an inline button in this format:\n"
+            "Send the call-to-action button in this format:\n"
             "`Button Text | https://example.com`\n\n"
-            "Or send `skip` to post without a button.",
+            "Or send `skip` to publish without a button.",
             parse_mode="Markdown",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     else:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CAPTION
         await update.message.reply_text(
-            "Step 2 of 3\nSend the description text for this post, or send `skip`.",
+            "Step 2 of 3\nSend the caption for this post, or send `skip`.",
             parse_mode="Markdown",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
@@ -298,16 +298,16 @@ async def handle_admin_video(update: Update, context: ContextTypes.DEFAULT_TYPE)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
             "Step 2 of 3\n"
-            "Send an inline button in this format:\n"
+            "Send the call-to-action button in this format:\n"
             "`Button Text | https://example.com`\n\n"
-            "Or send `skip` to post without a button.",
+            "Or send `skip` to publish without a button.",
             parse_mode="Markdown",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     else:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CAPTION
         await update.message.reply_text(
-            "Step 2 of 3\nSend the description text for this post, or send `skip`.",
+            "Step 2 of 3\nSend the caption for this post, or send `skip`.",
             parse_mode="Markdown",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
@@ -332,16 +332,16 @@ async def handle_admin_document(update: Update, context: ContextTypes.DEFAULT_TY
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
             "Step 2 of 3\n"
-            "Send an inline button in this format:\n"
+            "Send the call-to-action button in this format:\n"
             "`Button Text | https://example.com`\n\n"
-            "Or send `skip` to post without a button.",
+            "Or send `skip` to publish without a button.",
             parse_mode="Markdown",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     else:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CAPTION
         await update.message.reply_text(
-            "Step 2 of 3\nSend the description text for this post, or send `skip`.",
+            "Step 2 of 3\nSend the caption for this post, or send `skip`.",
             parse_mode="Markdown",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
@@ -353,18 +353,17 @@ def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
 
     return (
-        "Admin Dashboard\n\n"
-        f"Users: {stats['total_users']}\n"
-        f"New users today: {stats['new_users_today']}\n"
-        f"New users this week: {stats['new_users_week']}\n"
-        f"Jobs: {stats['total_jobs']}\n"
+        "Admin Workspace\n\n"
+        f"Total users: {stats['total_users']}\n"
+        f"New today: {stats['new_users_today']}\n"
+        f"New this week: {stats['new_users_week']}\n"
+        f"Total jobs: {stats['total_jobs']}\n"
         f"Jobs today: {stats['jobs_today']}\n"
         f"Jobs this week: {stats['jobs_week']}\n"
-        f"Admins: {stats['total_admins']}\n"
+        f"Admin accounts: {stats['total_admins']}\n"
         f"Uptime: {uptime}\n"
-        "Health: /health active\n\n"
-        "Quick actions\n"
-        "Use the buttons below to check status, manage admins, or prepare a broadcast."
+        "Health endpoint: /health\n\n"
+        "Choose an action below to review status, manage admins, or prepare a broadcast."
     )
 
 
@@ -372,22 +371,22 @@ def _bot_status_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     stats = db.get_dashboard_stats()
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
     return (
-        "Bot Status\n\n"
+        "System Status\n\n"
         f"Users tracked: {stats['total_users']}\n"
         f"Admin accounts: {stats['total_admins']}\n"
         f"Total jobs: {stats['total_jobs']}\n"
         f"Uptime: {uptime}\n"
         "Health endpoint: /health\n"
-        "Deployment status: active"
+        "Deployment: active"
     )
 
 
 def _admins_message() -> str:
     admins = db.list_admins()
     if not admins:
-        return "No admins found."
+        return "No admin accounts found."
 
-    lines = ["Admin Accounts", ""]
+    lines = ["Admin Team", ""]
     for admin in admins:
         label = admin["first_name"] or admin["username"] or str(admin["user_id"])
         role = "Main Admin" if admin["is_main_admin"] else "Admin"
@@ -449,7 +448,7 @@ async def _post_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     sent_count = 0
     failed_count = 0
 
-    await update.message.reply_text(f"Broadcast started for {len(user_ids)} users...")
+    await update.message.reply_text(f"Broadcast started for {len(user_ids)} users.")
 
     for target_user_id in user_ids:
         try:

@@ -443,6 +443,13 @@ async def _finish_rename(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
         reset_user_state(context.user_data)
     except ValueError as exc:
         await update.message.reply_text(str(exc), reply_markup=home_keyboard())
+    except Exception:
+        logger.exception("Failed to finish rename")
+        reset_user_state(context.user_data)
+        await update.message.reply_text(
+            "I couldn't rename that file cleanly. Please start again from Main Menu and try a different name.",
+            reply_markup=home_keyboard(),
+        )
     finally:
         if succeeded:
             cleanup_paths([job_dir])

@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from contextlib import suppress
 from pathlib import Path
 
 from telegram import InputFile, Update
@@ -93,6 +95,13 @@ CONVERSION_BUTTONS = {
     BTN_PNG_TO_JPG: "png_to_jpg",
 }
 
+WAIT_ANIMATION_FRAMES = [
+    "Working on it.",
+    "Working on it..",
+    "Working on it...",
+    "Almost done...",
+]
+
 
 def _size_label(size_in_bytes: int) -> str:
     return f"{round(size_in_bytes / (1024 * 1024))} MB"
@@ -168,7 +177,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             context.user_data[STATE_KEY_PENDING_FILE] = str(input_path)
             context.user_data[STATE_KEY_PENDING_EXTENSION] = Path(file_name).suffix
             await update.message.reply_text(
-                "Nice, file received.\n\nSend the new file name you want to use.",
+                "File received.\n\nSend the new file name.",
                 reply_markup=home_keyboard(),
             )
             return
@@ -284,7 +293,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_RENAME_FILE
         await update.message.reply_text(
-            f"File Rename\n\nSend the file you want to rename. I'll keep the file content the same and update the name cleanly.\n\nFile limit: {_size_label(config.MAX_FILE_SIZE)}.",
+            f"Rename File\n\nSend the file.\nThen send the new file name.\n\nFile limit: {_size_label(config.MAX_FILE_SIZE)}.",
             reply_markup=home_keyboard(),
         )
         return
@@ -365,8 +374,12 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
 
     action = context.user_data.get(STATE_KEY_ACTION)
     job_dir = input_path.parent
+    wait_message = None
+    wait_task = None
 
     try:
+        wait_message, wait_task = await _start_wait_animation(update, _wait_title_for_action(action))
+
         if action == ACTION_EXTRACT_ZIP:
             if input_path.suffix.lower() != ".zip":
                 raise ValueError("Please send a ZIP file.")
@@ -380,7 +393,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
                         document=InputFile(file_handle, filename=file_path.name)
                     )
 
-            await update.message.reply_text("Archive unpacked successfully.", reply_markup=home_keyboard())
+            await update.message.reply_text("Done. Your files are ready.", reply_markup=home_keyboard())
             reset_user_state(context.user_data)
             return
 
@@ -389,7 +402,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
             with compressed_path.open("rb") as file_handle:
                 await update.message.reply_document(
                     document=InputFile(file_handle, filename=compressed_path.name),
-                    caption="Image ready. Your compressed version is attached below.",
+                    caption="Done. Here is your compressed file.",
                     reply_markup=home_keyboard(),
                 )
             reset_user_state(context.user_data)
@@ -405,7 +418,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
             with converted_path.open("rb") as file_handle:
                 await update.message.reply_document(
                     document=InputFile(file_handle, filename=converted_path.name),
-                    caption="Conversion complete. Your new file is ready.",
+                    caption="Done. Here is your converted file.",
                     reply_markup=home_keyboard(),
                 )
             reset_user_state(context.user_data)
@@ -416,6 +429,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
         await update.message.reply_text(str(exc), reply_markup=home_keyboard())
         reset_user_state(context.user_data)
     finally:
+        await _stop_wait_animation(wait_message, wait_task)
         cleanup_paths([job_dir])
 
 
@@ -424,6 +438,8 @@ async def _finish_rename(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
     extension = context.user_data.get(STATE_KEY_PENDING_EXTENSION, "")
     job_dir = source_path.parent
     succeeded = False
+    wait_message = None
+    wait_task = None
 
     try:
         new_name = safe_file_name(text)
@@ -432,11 +448,12 @@ async def _finish_rename(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
         if not Path(new_name).suffix and extension:
             new_name = f"{new_name}{extension}"
 
+        wait_message, wait_task = await _start_wait_animation(update, "Renaming your file")
         renamed_path = rename_file_copy(source_path, new_name)
         with renamed_path.open("rb") as file_handle:
             await update.message.reply_document(
                 document=InputFile(file_handle, filename=renamed_path.name),
-                caption="Rename complete. Your updated file is ready.",
+                caption="Done. Here is your renamed file.",
                 reply_markup=home_keyboard(),
             )
         succeeded = True
@@ -451,6 +468,7 @@ async def _finish_rename(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
             reply_markup=home_keyboard(),
         )
     finally:
+        await _stop_wait_animation(wait_message, wait_task)
         if succeeded:
             cleanup_paths([job_dir])
 
@@ -459,6 +477,8 @@ async def _finish_split(update: Update, context: ContextTypes.DEFAULT_TYPE, text
     source_path = Path(context.user_data[STATE_KEY_PENDING_FILE])
     job_dir = source_path.parent
     succeeded = False
+    wait_message = None
+    wait_task = None
 
     try:
         if "-" not in text:
@@ -469,11 +489,12 @@ async def _finish_split(update: Update, context: ContextTypes.DEFAULT_TYPE, text
         if start_page < 1 or end_page < start_page:
             raise ValueError("That page range isn't valid.")
 
+        wait_message, wait_task = await _start_wait_animation(update, "Splitting your PDF")
         split_path = split_pdf(source_path, start_page, end_page)
         with split_path.open("rb") as file_handle:
             await update.message.reply_document(
                 document=InputFile(file_handle, filename=split_path.name),
-                caption="Split complete. Your extracted PDF pages are ready.",
+                caption="Done. Here is your split PDF.",
                 reply_markup=home_keyboard(),
             )
         succeeded = True
@@ -481,6 +502,7 @@ async def _finish_split(update: Update, context: ContextTypes.DEFAULT_TYPE, text
     except ValueError as exc:
         await update.message.reply_text(str(exc), reply_markup=home_keyboard())
     finally:
+        await _stop_wait_animation(wait_message, wait_task)
         if succeeded:
             cleanup_paths([job_dir])
 
@@ -496,19 +518,62 @@ async def _finish_merge(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
 
     job_dir = Path(pending_files[0]).parent
+    wait_message = None
+    wait_task = None
     try:
+        wait_message, wait_task = await _start_wait_animation(update, "Merging your PDFs")
         output_path = merge_pdf_files(pending_files)
         with output_path.open("rb") as file_handle:
             await update.message.reply_document(
                 document=InputFile(file_handle, filename=output_path.name),
-                caption="Merge complete. Your combined PDF is ready.",
+                caption="Done. Here is your merged PDF.",
                 reply_markup=home_keyboard(),
             )
         reset_user_state(context.user_data)
     except ValueError as exc:
         await update.message.reply_text(str(exc), reply_markup=home_keyboard())
     finally:
+        await _stop_wait_animation(wait_message, wait_task)
         cleanup_paths([job_dir])
+
+
+async def _start_wait_animation(update: Update, title: str):
+    if not update.message:
+        return None, None
+
+    wait_message = await update.message.reply_text(f"{title}\n\n{WAIT_ANIMATION_FRAMES[0]}")
+    wait_task = asyncio.create_task(_animate_wait_message(wait_message, title))
+    return wait_message, wait_task
+
+
+async def _stop_wait_animation(wait_message, wait_task) -> None:
+    if wait_task:
+        wait_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await wait_task
+
+    if wait_message:
+        with suppress(Exception):
+            await wait_message.delete()
+
+
+async def _animate_wait_message(wait_message, title: str) -> None:
+    frame_index = 1
+    while True:
+        await asyncio.sleep(0.8)
+        with suppress(Exception):
+            await wait_message.edit_text(f"{title}\n\n{WAIT_ANIMATION_FRAMES[frame_index]}")
+        frame_index = (frame_index + 1) % len(WAIT_ANIMATION_FRAMES)
+
+
+def _wait_title_for_action(action: str | None) -> str:
+    if action == ACTION_EXTRACT_ZIP:
+        return "Preparing your files"
+    if action == ACTION_COMPRESS_IMAGE:
+        return "Compressing your image"
+    if action == ACTION_CONVERT_FILE:
+        return "Converting your file"
+    return "Preparing your file"
 
 
 def _get_or_create_job_dir(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Path:

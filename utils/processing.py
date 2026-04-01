@@ -417,7 +417,7 @@ def convert_pdf_to_pdfa(source_path: Path) -> Path:
 
 def rename_file_copy(source_path: Path, new_name: str) -> Path:
     if source_path.name.lower() == new_name.lower():
-        raise ValueError("Send a different file name from the current one.")
+        raise ValueError("Send a different file name.")
 
     output_path = source_path.with_name(new_name)
     shutil.copy2(source_path, output_path)

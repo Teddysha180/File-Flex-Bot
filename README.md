@@ -114,3 +114,6 @@ Recommended monitor:
 - Polling is used, so no Telegram webhook setup is required
 - Docker deployment includes LibreOffice and Ghostscript for the Office/PDF conversions above
 - Admin-created share links are durable when `DATABASE_URL` points to Postgres or when `DATA_DIR` is on a persistent disk
+
+Redeploy verification note:
+- If `System Status` shows `Storage location: /data/bot_database.db` and `Persistent storage: yes`, newly created shared bundles should survive future redeploys.

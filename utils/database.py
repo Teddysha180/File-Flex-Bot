@@ -651,11 +651,11 @@ class UserDatabase:
         if os.getenv("RENDER", "").lower() != "true":
             return True
 
-        try:
-            self.db_path.relative_to(BASE_DIR)
-            return False
-        except ValueError:
-            return True
+        # On Render, a path like /data is only truly persistent if a disk is
+        # actually mounted there at runtime. Otherwise it's just another
+        # ephemeral directory inside the container filesystem.
+        mount_path = self.db_path.parent
+        return os.path.ismount(mount_path)
 
     def log_processing(
         self,

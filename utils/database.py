@@ -591,6 +591,20 @@ class UserDatabase:
                 "total_file_stores": total_file_stores,
             }
 
+    def get_storage_details(self) -> dict[str, str]:
+        if self.backend == "postgres":
+            return {
+                "backend": "postgres",
+                "location": "DATABASE_URL",
+                "persistent": "yes",
+            }
+
+        return {
+            "backend": "sqlite",
+            "location": str(self.db_path),
+            "persistent": "yes" if self._is_persistent_sqlite_path() else "no",
+        }
+
     def _is_persistent_sqlite_path(self) -> bool:
         if self.backend != "sqlite":
             return False

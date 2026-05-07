@@ -436,6 +436,7 @@ async def handle_admin_document(update: Update, context: ContextTypes.DEFAULT_TY
 
 def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     stats = db.get_dashboard_stats()
+    storage = db.get_storage_details()
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
 
     return (
@@ -448,6 +449,7 @@ def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
         f"Jobs this week: {stats['jobs_week']}\n"
         f"Stored bundles: {stats['total_file_stores']}\n"
         f"Admin accounts: {stats['total_admins']}\n"
+        f"Storage: {storage['backend']} ({storage['persistent']})\n"
         f"Uptime: {uptime}\n"
         "Health endpoint: /health\n\n"
         "Choose an action below to review status, manage admins, prepare a broadcast, or create a shared file bundle."
@@ -456,12 +458,16 @@ def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
 
 def _bot_status_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     stats = db.get_dashboard_stats()
+    storage = db.get_storage_details()
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
     return (
         "System Status\n\n"
         f"Users tracked: {stats['total_users']}\n"
         f"Admin accounts: {stats['total_admins']}\n"
         f"Stored bundles: {stats['total_file_stores']}\n"
+        f"Storage backend: {storage['backend']}\n"
+        f"Storage location: {storage['location']}\n"
+        f"Persistent storage: {storage['persistent']}\n"
         f"Total jobs: {stats['total_jobs']}\n"
         f"Uptime: {uptime}\n"
         "Health endpoint: /health\n"

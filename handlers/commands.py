@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -16,6 +17,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     register_user(update)
     if not await ensure_channel_membership(update, context):
         return
+    if await _handle_start_payload(update, context):
+        return
     if update.message:
         intro_message = await update.message.reply_text(
             INTRO_ANIMATION_FRAMES[0],
@@ -27,7 +30,6 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
         await asyncio.sleep(0.25)
         await update.message.reply_text(WELCOME_MESSAGE, reply_markup=home_keyboard())
-        await _handle_start_payload(update, context)
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -38,13 +40,13 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text(HELP_MESSAGE, reply_markup=home_keyboard())
 
 
-async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     if not update.message or not context.args:
-        return
+        return False
 
     payload = context.args[0].strip()
     if not payload.startswith("store_"):
-        return
+        return False
 
     share_token = payload.removeprefix("store_")
     store = db.get_file_store(share_token)
@@ -53,7 +55,7 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
             "That shared file link is invalid or no longer available.",
             reply_markup=home_keyboard(),
         )
-        return
+        return True
 
     items = db.get_file_store_items(store["id"])
     if not items:
@@ -61,31 +63,71 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
             "This shared file bundle is empty.",
             reply_markup=home_keyboard(),
         )
-        return
+        return True
 
-    await update.message.reply_text(
+    preparing_message = await update.message.reply_text(
         f"Preparing {len(items)} shared file(s) for you...",
         reply_markup=home_keyboard(),
     )
+    _schedule_message_deletion(context, update.effective_chat.id, preparing_message.message_id)
 
+    sent_message_ids: list[int] = []
     for item in items:
         if item["file_type"] == "document":
-            await context.bot.send_document(
+            sent_message = await context.bot.send_document(
                 chat_id=update.effective_chat.id,
                 document=item["file_id"],
                 caption=item["caption"] or None,
                 filename=item["file_name"] or None,
             )
         elif item["file_type"] == "photo":
-            await context.bot.send_photo(
+            sent_message = await context.bot.send_photo(
                 chat_id=update.effective_chat.id,
                 photo=item["file_id"],
                 caption=item["caption"] or None,
             )
         elif item["file_type"] == "video":
-            await context.bot.send_video(
+            sent_message = await context.bot.send_video(
                 chat_id=update.effective_chat.id,
                 video=item["file_id"],
                 caption=item["caption"] or None,
                 filename=item["file_name"] or None,
             )
+        else:
+            continue
+        sent_message_ids.append(sent_message.message_id)
+
+    warning_message = await update.message.reply_text(
+        "⚠️ Important:\n\n"
+        "All Messages will be deleted after 5 minutes. Please save or forward these messages to your personal saved messages to avoid losing them!"
+    )
+    sent_message_ids.append(warning_message.message_id)
+
+    for message_id in sent_message_ids:
+        _schedule_message_deletion(context, update.effective_chat.id, message_id)
+
+    return True
+
+
+def _schedule_message_deletion(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int | None,
+    message_id: int,
+    delay_seconds: int = 300,
+) -> None:
+    if not chat_id:
+        return
+    context.application.create_task(
+        _delete_message_after_delay(context, chat_id, message_id, delay_seconds)
+    )
+
+
+async def _delete_message_after_delay(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    message_id: int,
+    delay_seconds: int,
+) -> None:
+    await asyncio.sleep(delay_seconds)
+    with contextlib.suppress(Exception):
+        await context.bot.delete_message(chat_id=chat_id, message_id=message_id)

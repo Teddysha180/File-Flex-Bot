@@ -35,13 +35,13 @@ async def ensure_channel_membership(update: Update, context: ContextTypes.DEFAUL
     join_keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("Join Channel", url=config.REQUIRED_CHANNEL_URL)],
-            [InlineKeyboardButton("I've Joined", callback_data=JOIN_CHECK_CALLBACK)],
+            [InlineKeyboardButton("Check Access", callback_data=JOIN_CHECK_CALLBACK)],
         ]
     )
     await message.reply_text(
-        "Access Check\n\n"
-        "Join our channel first to unlock File Flex.\n"
-        "Once you're in, tap I've Joined and I'll open the workspace.",
+        "ACCESS CHECK\n\n"
+        "Join our required channel first to unlock FILE FLEX BLACK.\n"
+        "Once you are in, tap Check Access and I will open the workspace.",
         reply_markup=join_keyboard,
     )
     return False
@@ -55,7 +55,7 @@ async def handle_join_check_callback(update: Update, context: ContextTypes.DEFAU
     if await is_channel_member(update, context):
         await query.answer("Membership confirmed.")
         await query.edit_message_text(
-            "Access confirmed.\n\nYour File Flex workspace is ready.",
+            "Access confirmed.\n\nYour FILE FLEX BLACK workspace is ready.",
         )
         await context.bot.send_message(
             chat_id=query.message.chat_id,
@@ -64,4 +64,4 @@ async def handle_join_check_callback(update: Update, context: ContextTypes.DEFAU
         )
         return
 
-    await query.answer("Channel membership still isn't visible yet. Join first, then try again.", show_alert=True)
+    await query.answer("Channel membership is not visible yet. Join first, then try again.", show_alert=True)

@@ -1,26 +1,26 @@
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
 
-BTN_EXTRACT_ZIP = "Archive Unpack"
-BTN_COMPRESS_IMAGE = "Image Compress"
-BTN_CONVERT_FILES = "File Convert"
-BTN_RENAME_FILE = "File Rename"
+BTN_EXTRACT_ZIP = "Extract Archive"
+BTN_COMPRESS_IMAGE = "Compress Image"
+BTN_CONVERT_FILES = "Convert Files"
+BTN_RENAME_FILE = "Rename File"
 BTN_MERGE_PDF = "PDF Merge"
 BTN_SPLIT_PDF = "PDF Split"
-BTN_HELP = "Help Center"
-BTN_HOME = "Main Menu"
-BTN_DONE = "Create Now"
-BTN_ADMIN_DASHBOARD = "Overview"
-BTN_ADMIN_STATUS = "System Status"
-BTN_ADMIN_ADMINS = "Admin Team"
-BTN_ADMIN_BROADCAST = "Broadcast Flow"
-BTN_ADMIN_CREATE_STORE = "Create Store"
-BTN_ADMIN_FINISH_STORE = "Done Creating"
-BTN_ADMIN_STORES = "Stored Links"
-BTN_ADMIN_POST = "Send Broadcast"
+BTN_HELP = "Support"
+BTN_HOME = "Home"
+BTN_DONE = "Finish Merge"
+BTN_ADMIN_DASHBOARD = "Dashboard"
+BTN_ADMIN_STATUS = "Status"
+BTN_ADMIN_ADMINS = "Admins"
+BTN_ADMIN_BROADCAST = "Broadcast"
+BTN_ADMIN_CREATE_STORE = "New Share Link"
+BTN_ADMIN_FINISH_STORE = "Create Link"
+BTN_ADMIN_STORES = "Share Guide"
+BTN_ADMIN_POST = "Publish Broadcast"
 BTN_ADMIN_ADD_ADMIN = "Add Admin"
 BTN_ADMIN_REMOVE_ADMIN = "Remove Admin"
-BTN_ADMIN_CANCEL = "Cancel Action"
+BTN_ADMIN_CANCEL = "Cancel"
 
 BTN_JPG_TO_PDF = "JPG to PDF"
 BTN_WORD_TO_PDF = "Word to PDF"
@@ -46,7 +46,7 @@ def home_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
         is_persistent=True,
-        input_field_placeholder="Choose a file tool",
+        input_field_placeholder="Choose a tool",
     )
 
 
@@ -88,7 +88,7 @@ def convert_keyboard_for_buttons(buttons: list[str]) -> ReplyKeyboardMarkup:
         rows,
         resize_keyboard=True,
         is_persistent=True,
-        input_field_placeholder="Choose a conversion flow",
+        input_field_placeholder="Choose a conversion mode",
     )
 
 
@@ -99,7 +99,7 @@ def merge_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
         is_persistent=True,
-        input_field_placeholder="Send files, then create",
+        input_field_placeholder="Send files, then finish merge",
     )
 
 
@@ -132,7 +132,7 @@ def broadcast_confirm_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
         is_persistent=True,
-        input_field_placeholder="Send or cancel the broadcast",
+        input_field_placeholder="Publish or cancel",
     )
 
 
@@ -150,5 +150,5 @@ def store_creation_keyboard(is_main_admin: bool) -> ReplyKeyboardMarkup:
         rows,
         resize_keyboard=True,
         is_persistent=True,
-        input_field_placeholder="Send files, then finish store creation",
+        input_field_placeholder="Send files, then create the link",
     )

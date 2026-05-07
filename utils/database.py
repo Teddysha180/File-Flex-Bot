@@ -58,8 +58,6 @@ class UserDatabase:
             "so admin-created stores can be lost after Render redeploys or filesystem resets. "
             "Set DATABASE_URL to Postgres or mount a Render persistent disk and point DATA_DIR to it."
         )
-        if config.REQUIRE_PERSISTENT_STORAGE:
-            raise RuntimeError(message)
         logger.warning(message)
 
     def _init_db(self) -> None:

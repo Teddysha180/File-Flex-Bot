@@ -9,6 +9,7 @@ from handlers.access import ensure_channel_membership
 from handlers.keyboards import home_keyboard
 from handlers.messages import HELP_MESSAGE, INTRO_ANIMATION_FRAMES, WELCOME_MESSAGE
 from handlers.states import reset_user_state
+from utils.config import config
 from utils.database import db
 
 
@@ -48,54 +49,56 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
     if not payload.startswith("store_"):
         return False
 
-    share_token = payload.removeprefix("store_")
-    store = db.get_file_store(share_token)
-    if not store:
+    payload_parts = payload.split("_")
+    if len(payload_parts) != 3:
         await update.message.reply_text(
             "That shared file link is invalid or no longer available.",
             reply_markup=home_keyboard(),
         )
         return True
 
-    items = db.get_file_store_items(store["id"])
-    if not items:
+    try:
+        start_message_id = int(payload_parts[1])
+        end_message_id = int(payload_parts[2])
+    except ValueError:
         await update.message.reply_text(
-            "This shared file bundle is empty.",
+            "That shared file link is invalid or no longer available.",
+            reply_markup=home_keyboard(),
+        )
+        return True
+
+    if start_message_id <= 0 or end_message_id < start_message_id:
+        await update.message.reply_text(
+            "That shared file link is invalid or no longer available.",
             reply_markup=home_keyboard(),
         )
         return True
 
     preparing_message = await update.message.reply_text(
-        f"Preparing {len(items)} shared file(s) for you...",
+        f"Preparing {end_message_id - start_message_id + 1} shared file(s) for you...",
         reply_markup=home_keyboard(),
     )
     _schedule_message_deletion(context, update.effective_chat.id, preparing_message.message_id)
 
     sent_message_ids: list[int] = []
-    for item in items:
-        if item["file_type"] == "document":
-            sent_message = await context.bot.send_document(
+    for message_id in range(start_message_id, end_message_id + 1):
+        try:
+            copied_message = await context.bot.copy_message(
                 chat_id=update.effective_chat.id,
-                document=item["file_id"],
-                caption=item["caption"] or None,
-                filename=item["file_name"] or None,
+                from_chat_id=config.STORAGE_CHANNEL_ID,
+                message_id=message_id,
             )
-        elif item["file_type"] == "photo":
-            sent_message = await context.bot.send_photo(
-                chat_id=update.effective_chat.id,
-                photo=item["file_id"],
-                caption=item["caption"] or None,
-            )
-        elif item["file_type"] == "video":
-            sent_message = await context.bot.send_video(
-                chat_id=update.effective_chat.id,
-                video=item["file_id"],
-                caption=item["caption"] or None,
-                filename=item["file_name"] or None,
-            )
-        else:
+        except Exception:
             continue
-        sent_message_ids.append(sent_message.message_id)
+
+        sent_message_ids.append(copied_message.message_id)
+
+    if not sent_message_ids:
+        await update.message.reply_text(
+            "That shared file link is invalid or no longer available.",
+            reply_markup=home_keyboard(),
+        )
+        return True
 
     warning_message = await update.message.reply_text(
         "⚠️ Important:\n\n"

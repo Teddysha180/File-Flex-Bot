@@ -1,5 +1,4 @@
 import time
-import secrets
 from datetime import datetime
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -456,8 +455,9 @@ def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
         f"Total jobs: {stats['total_jobs']}\n"
         f"Jobs today: {stats['jobs_today']}\n"
         f"Jobs this week: {stats['jobs_week']}\n"
-        f"Stored bundles: {stats['total_file_stores']}\n"
+        "Stored bundles: channel-based links\n"
         f"Admin accounts: {stats['total_admins']}\n"
+        f"Share storage: Telegram channel {config.STORAGE_CHANNEL_ID}\n"
         f"Storage: {storage['backend']} ({storage['persistent']})\n"
         f"Uptime: {uptime}\n"
         "Health endpoint: /health\n\n"
@@ -473,7 +473,8 @@ def _bot_status_message(context: ContextTypes.DEFAULT_TYPE) -> str:
         "System Status\n\n"
         f"Users tracked: {stats['total_users']}\n"
         f"Admin accounts: {stats['total_admins']}\n"
-        f"Stored bundles: {stats['total_file_stores']}\n"
+        "Stored bundles: channel-based links\n"
+        f"Share storage: Telegram channel {config.STORAGE_CHANNEL_ID}\n"
         f"Storage backend: {storage['backend']}\n"
         f"Storage location: {storage['location']}\n"
         f"Persistent storage: {storage['persistent']}\n"
@@ -621,25 +622,34 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
         )
         return
 
-    share_token = secrets.token_urlsafe(8).replace("-", "").replace("_", "")
-    store_id = db.create_file_store(user_id, share_token)
-    context.user_data[STATE_KEY_STORE_ID] = store_id
-
-    for index, item in enumerate(files, start=1):
-        db.add_file_store_item(
-            store_id,
-            item["file_type"],
-            item["file_id"],
-            file_name=item.get("file_name", ""),
-            caption=item.get("caption", ""),
-            sort_order=index,
+    if not config.STORAGE_CHANNEL_ID:
+        await update.message.reply_text(
+            "Storage channel is not configured yet. Set `STORAGE_CHANNEL_ID` first.",
+            parse_mode="Markdown",
+            reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
+        return
+
+    sent_message_ids: list[int] = []
+    for item in files:
+        sent_message = await _send_store_item_to_channel(context, item)
+        sent_message_ids.append(sent_message.message_id)
+
+    if not sent_message_ids:
+        await update.message.reply_text(
+            "I couldn't save those files to the storage channel.",
+            reply_markup=admin_keyboard(is_main_admin_user(user_id)),
+        )
+        return
+
+    start_message_id = min(sent_message_ids)
+    end_message_id = max(sent_message_ids)
 
     bot_username = context.bot.username or (await context.bot.get_me()).username
     share_link = (
-        f"https://t.me/{bot_username}?start=store_{share_token}"
+        f"https://t.me/{bot_username}?start=store_{start_message_id}_{end_message_id}"
         if bot_username
-        else f"/start store_{share_token}"
+        else f"/start store_{start_message_id}_{end_message_id}"
     )
 
     total_files = len(files)
@@ -647,6 +657,7 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
     await update.message.reply_text(
         "Store created successfully.\n\n"
         f"Files saved: {total_files}\n"
+        f"Channel messages: {start_message_id} to {end_message_id}\n"
         f"Share this link with users:\n{share_link}\n\n"
         "When a user opens the link and starts the bot, the saved files will be sent automatically.",
         reply_markup=admin_keyboard(is_main_admin_user(user_id)),
@@ -654,21 +665,39 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def _stores_message(context: ContextTypes.DEFAULT_TYPE) -> str:
-    stores = db.list_file_stores(limit=10)
-    if not stores:
-        return "Stored Links\n\nNo saved file bundles were found in the current database."
+    return (
+        "Stored Links\n\n"
+        "This bot now saves shared files in the Telegram storage channel instead of the local database.\n\n"
+        "New bundles will survive redeploys, but the bot does not keep an index of past links.\n"
+        "Please save each generated share link after creation."
+    )
 
-    bot_username = context.bot.username or (await context.bot.get_me()).username
-    lines = ["Stored Links", ""]
-    for store in stores:
-        share_link = (
-            f"https://t.me/{bot_username}?start=store_{store['share_token']}"
-            if bot_username
-            else f"/start store_{store['share_token']}"
+
+async def _send_store_item_to_channel(
+    context: ContextTypes.DEFAULT_TYPE,
+    item: dict,
+):
+    if item["file_type"] == "document":
+        return await context.bot.send_document(
+            chat_id=config.STORAGE_CHANNEL_ID,
+            document=item["file_id"],
+            caption=item.get("caption") or None,
+            filename=item.get("file_name") or None,
         )
-        lines.append(
-            f"ID {store['id']} | files: {store['item_count']} | token: {store['share_token']}"
+
+    if item["file_type"] == "photo":
+        return await context.bot.send_photo(
+            chat_id=config.STORAGE_CHANNEL_ID,
+            photo=item["file_id"],
+            caption=item.get("caption") or None,
         )
-        lines.append(share_link)
-        lines.append("")
-    return "\n".join(lines).strip()
+
+    if item["file_type"] == "video":
+        return await context.bot.send_video(
+            chat_id=config.STORAGE_CHANNEL_ID,
+            video=item["file_id"],
+            caption=item.get("caption") or None,
+            filename=item.get("file_name") or None,
+        )
+
+    raise ValueError("Unsupported store item type")

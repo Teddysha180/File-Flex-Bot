@@ -15,12 +15,27 @@ def _default_data_dir() -> Path:
 
     return Path("./data").resolve()
 
+
+def _parse_storage_channel_id() -> int:
+    raw_value = os.getenv("STORAGE_CHANNEL_ID", "3908387517").strip()
+    if not raw_value:
+        return 0
+
+    if raw_value.startswith("-100"):
+        return int(raw_value)
+
+    if raw_value.startswith("-"):
+        return int(raw_value)
+
+    return int(f"-100{raw_value}")
+
 class Config:
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     MAIN_ADMIN_ID = int(os.getenv("MAIN_ADMIN_ID", "7852430043"))
     ADMIN_IDS = [int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()]
     REQUIRED_CHANNEL_USERNAME = os.getenv("REQUIRED_CHANNEL_USERNAME", "@arts_of_drawings")
     REQUIRED_CHANNEL_URL = os.getenv("REQUIRED_CHANNEL_URL", "https://t.me/arts_of_drawings")
+    STORAGE_CHANNEL_ID = _parse_storage_channel_id()
     DATA_DIR = _default_data_dir()
     REQUIRE_PERSISTENT_STORAGE = os.getenv("REQUIRE_PERSISTENT_STORAGE", "false").lower() == "true"
     

@@ -127,7 +127,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CONTENT
         await update.message.reply_text(
-            "BROADCAST STUDIO\n\n"
+            "⬛ BROADCAST STUDIO 📁\n\n"
             "Step 1 of 3\n"
             "Send the message or media for this broadcast.\n\n"
             "Supported formats:\n"
@@ -145,7 +145,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_STORE_FILES
         context.user_data[STATE_KEY_STORE_FILES] = []
         await update.message.reply_text(
-            "SHARE LINK CREATOR\n\n"
+            "⬛ SHARE LINK CREATOR 📁\n\n"
             "Send one or more files now to create a polished share link.\n\n"
             "Supported formats:\n"
             "- Documents\n"
@@ -446,7 +446,7 @@ def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
 
     return (
-        "FILE FLEX BLACK ADMIN\n\n"
+        "⬛ FILE FLEX BLACK ADMIN 📁\n\n"
         f"Users: {stats['total_users']}\n"
         f"New today: {stats['new_users_today']}\n"
         f"New this week: {stats['new_users_week']}\n"
@@ -468,7 +468,7 @@ def _bot_status_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     storage = db.get_storage_details()
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
     return (
-        "SYSTEM STATUS\n\n"
+        "⬛ SYSTEM STATUS 📁\n\n"
         f"Users tracked: {stats['total_users']}\n"
         f"Admin accounts: {stats['total_admins']}\n"
         "Stored bundles: channel-based links\n"
@@ -488,7 +488,7 @@ def _admins_message() -> str:
     if not admins:
         return "No admin accounts found."
 
-    lines = ["ADMIN TEAM", ""]
+    lines = ["⬛ ADMIN TEAM 📁", ""]
     for admin in admins:
         label = admin["first_name"] or admin["username"] or str(admin["user_id"])
         role = "Main Admin" if admin["is_main_admin"] else "Admin"
@@ -664,7 +664,7 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
 
 async def _stores_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     return (
-        "SHARE GUIDE\n\n"
+        "⬛ SHARE GUIDE 📁\n\n"
         "Shared files are now stored in the Telegram storage channel instead of local bot storage.\n\n"
         "This means new links can survive redeploys.\n"
         "Please save each generated share link after creation because the bot does not maintain a full link history."

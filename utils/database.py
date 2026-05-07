@@ -504,6 +504,45 @@ class UserDatabase:
                 for row in cursor.fetchall()
             ]
 
+    def list_file_stores(self, limit: int = 10) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            if self.backend == "postgres":
+                cursor.execute(
+                    """
+                    SELECT fs.id, fs.share_token, fs.created_by, fs.created_at, COUNT(fsi.id) AS item_count
+                    FROM file_stores fs
+                    LEFT JOIN file_store_items fsi ON fsi.store_id = fs.id
+                    GROUP BY fs.id, fs.share_token, fs.created_by, fs.created_at
+                    ORDER BY fs.created_at DESC
+                    LIMIT %s
+                    """,
+                    (limit,),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT fs.id, fs.share_token, fs.created_by, fs.created_at, COUNT(fsi.id) AS item_count
+                    FROM file_stores fs
+                    LEFT JOIN file_store_items fsi ON fsi.store_id = fs.id
+                    GROUP BY fs.id, fs.share_token, fs.created_by, fs.created_at
+                    ORDER BY fs.created_at DESC
+                    LIMIT ?
+                    """,
+                    (limit,),
+                )
+
+            return [
+                {
+                    "id": row[0],
+                    "share_token": row[1],
+                    "created_by": row[2],
+                    "created_at": row[3],
+                    "item_count": row[4],
+                }
+                for row in cursor.fetchall()
+            ]
+
     def get_dashboard_stats(self) -> dict[str, Any]:
         with self._connect() as conn:
             cursor = conn.cursor()

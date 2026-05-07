@@ -16,6 +16,7 @@ from handlers.keyboards import (
     BTN_ADMIN_POST,
     BTN_ADMIN_REMOVE_ADMIN,
     BTN_ADMIN_STATUS,
+    BTN_ADMIN_STORES,
     admin_keyboard,
     broadcast_confirm_keyboard,
     store_creation_keyboard,
@@ -113,6 +114,14 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         await update.message.reply_text(
             _admins_message(),
+            reply_markup=admin_keyboard(is_main_admin_user(user_id)),
+        )
+        return True
+
+    if text == BTN_ADMIN_STORES:
+        reset_user_state(context.user_data)
+        await update.message.reply_text(
+            await _stores_message(context),
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
         return True
@@ -642,3 +651,24 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
         "When a user opens the link and starts the bot, the saved files will be sent automatically.",
         reply_markup=admin_keyboard(is_main_admin_user(user_id)),
     )
+
+
+async def _stores_message(context: ContextTypes.DEFAULT_TYPE) -> str:
+    stores = db.list_file_stores(limit=10)
+    if not stores:
+        return "Stored Links\n\nNo saved file bundles were found in the current database."
+
+    bot_username = context.bot.username or (await context.bot.get_me()).username
+    lines = ["Stored Links", ""]
+    for store in stores:
+        share_link = (
+            f"https://t.me/{bot_username}?start=store_{store['share_token']}"
+            if bot_username
+            else f"/start store_{store['share_token']}"
+        )
+        lines.append(
+            f"ID {store['id']} | files: {store['item_count']} | token: {store['share_token']}"
+        )
+        lines.append(share_link)
+        lines.append("")
+    return "\n".join(lines).strip()

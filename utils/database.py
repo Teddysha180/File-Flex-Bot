@@ -22,9 +22,15 @@ logger = logging.getLogger(__name__)
 
 class UserDatabase:
     def __init__(self, db_path: Path = DB_PATH):
-        self.database_url = os.getenv("DATABASE_URL", "").strip()
+        raw_database_url = os.getenv("DATABASE_URL", "").strip()
+        self.database_url = raw_database_url if self._looks_like_postgres_url(raw_database_url) else ""
         self.backend = "postgres" if self.database_url else "sqlite"
         self.db_path = db_path
+
+        if raw_database_url and not self.database_url:
+            logger.warning(
+                "Ignoring invalid DATABASE_URL value and falling back to SQLite persistent storage."
+            )
 
         if self.backend == "sqlite":
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -848,6 +854,11 @@ class UserDatabase:
         if isinstance(value, str):
             return datetime.fromisoformat(value.replace("Z", "+00:00"))
         raise TypeError("Unsupported datetime value")
+
+    @staticmethod
+    def _looks_like_postgres_url(value: str) -> bool:
+        lowered = value.lower()
+        return lowered.startswith("postgres://") or lowered.startswith("postgresql://")
 
 
 db = UserDatabase()

@@ -14,6 +14,8 @@ BTN_ADMIN_DASHBOARD = "Overview"
 BTN_ADMIN_STATUS = "System Status"
 BTN_ADMIN_ADMINS = "Admin Team"
 BTN_ADMIN_BROADCAST = "Broadcast Flow"
+BTN_ADMIN_CREATE_STORE = "Create Store"
+BTN_ADMIN_FINISH_STORE = "Done Creating"
 BTN_ADMIN_POST = "Send Broadcast"
 BTN_ADMIN_ADD_ADMIN = "Add Admin"
 BTN_ADMIN_REMOVE_ADMIN = "Remove Admin"
@@ -104,6 +106,7 @@ def admin_keyboard(is_main_admin: bool) -> ReplyKeyboardMarkup:
     rows = [
         [KeyboardButton(BTN_ADMIN_DASHBOARD), KeyboardButton(BTN_ADMIN_STATUS)],
         [KeyboardButton(BTN_ADMIN_ADMINS), KeyboardButton(BTN_ADMIN_BROADCAST)],
+        [KeyboardButton(BTN_ADMIN_CREATE_STORE), KeyboardButton(BTN_ADMIN_FINISH_STORE)],
     ]
 
     if is_main_admin:
@@ -128,4 +131,22 @@ def broadcast_confirm_keyboard() -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         is_persistent=True,
         input_field_placeholder="Send or cancel the broadcast",
+    )
+
+
+def store_creation_keyboard(is_main_admin: bool) -> ReplyKeyboardMarkup:
+    rows = [
+        [KeyboardButton(BTN_ADMIN_FINISH_STORE), KeyboardButton(BTN_ADMIN_CANCEL)],
+    ]
+
+    if is_main_admin:
+        rows.append([KeyboardButton(BTN_ADMIN_ADD_ADMIN), KeyboardButton(BTN_ADMIN_REMOVE_ADMIN)])
+
+    rows.append([KeyboardButton(BTN_HOME)])
+
+    return ReplyKeyboardMarkup(
+        rows,
+        resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder="Send files, then finish store creation",
     )

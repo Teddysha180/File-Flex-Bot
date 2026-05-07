@@ -17,6 +17,8 @@ STATE_KEY_BROADCAST_FILE_NAME = "broadcast_file_name"
 STATE_KEY_BROADCAST_TEXT = "broadcast_text"
 STATE_KEY_BROADCAST_BUTTON_TEXT = "broadcast_button_text"
 STATE_KEY_BROADCAST_BUTTON_URL = "broadcast_button_url"
+STATE_KEY_STORE_ID = "store_id"
+STATE_KEY_STORE_FILES = "store_files"
 
 STATE_KEY_ACTION = "selected_action"
 STATE_KEY_CONVERSION_TARGET = "conversion_target"
@@ -45,3 +47,5 @@ def reset_user_state(user_data: dict) -> None:
     user_data.pop(STATE_KEY_BROADCAST_TEXT, None)
     user_data.pop(STATE_KEY_BROADCAST_BUTTON_TEXT, None)
     user_data.pop(STATE_KEY_BROADCAST_BUTTON_URL, None)
+    user_data.pop(STATE_KEY_STORE_ID, None)
+    user_data.pop(STATE_KEY_STORE_FILES, None)

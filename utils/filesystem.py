@@ -4,10 +4,11 @@ import uuid
 from pathlib import Path
 
 from telegram import Document, PhotoSize, Video
+from utils.config import config
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR))).resolve()
+DATA_DIR = config.DATA_DIR
 DOWNLOAD_DIR = DATA_DIR / "downloads"
 
 

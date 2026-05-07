@@ -1,4 +1,5 @@
 import time
+import secrets
 from datetime import datetime
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -9,12 +10,15 @@ from handlers.keyboards import (
     BTN_ADMIN_ADMINS,
     BTN_ADMIN_BROADCAST,
     BTN_ADMIN_CANCEL,
+    BTN_ADMIN_CREATE_STORE,
     BTN_ADMIN_DASHBOARD,
+    BTN_ADMIN_FINISH_STORE,
     BTN_ADMIN_POST,
     BTN_ADMIN_REMOVE_ADMIN,
     BTN_ADMIN_STATUS,
     admin_keyboard,
     broadcast_confirm_keyboard,
+    store_creation_keyboard,
 )
 from handlers.states import (
     STATE_KEY_ADMIN_STEP,
@@ -24,6 +28,8 @@ from handlers.states import (
     STATE_KEY_BROADCAST_FILE_NAME,
     STATE_KEY_BROADCAST_TEXT,
     STATE_KEY_BROADCAST_TYPE,
+    STATE_KEY_STORE_FILES,
+    STATE_KEY_STORE_ID,
     reset_user_state,
 )
 from utils.config import config
@@ -36,6 +42,7 @@ ADMIN_STEP_BROADCAST_CONTENT = "broadcast_content"
 ADMIN_STEP_BROADCAST_CAPTION = "broadcast_caption"
 ADMIN_STEP_BROADCAST_BUTTON = "broadcast_button"
 ADMIN_STEP_BROADCAST_CONFIRM = "broadcast_confirm"
+ADMIN_STEP_STORE_FILES = "store_files"
 
 
 def register_user(update: Update) -> None:
@@ -127,6 +134,23 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         )
         return True
 
+    if text == BTN_ADMIN_CREATE_STORE:
+        reset_user_state(context.user_data)
+        context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_STORE_FILES
+        context.user_data[STATE_KEY_STORE_FILES] = []
+        await update.message.reply_text(
+            "Store Creator\n\n"
+            "Send one or many files now.\n\n"
+            "Supported formats:\n"
+            "- Documents\n"
+            "- Photos\n"
+            "- Videos\n\n"
+            "When you finish uploading, tap `Done Creating` and I'll generate a share link.",
+            reply_markup=store_creation_keyboard(is_main_admin_user(user_id)),
+            parse_mode="Markdown",
+        )
+        return True
+
     if text == BTN_ADMIN_ADD_ADMIN and is_main_admin_user(user_id):
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_ADD_ADMIN
@@ -151,6 +175,18 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             "Admin action canceled. You're back in the admin workspace.",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
+        return True
+
+    if text == BTN_ADMIN_FINISH_STORE:
+        if admin_step != ADMIN_STEP_STORE_FILES:
+            await update.message.reply_text(
+                "Start `Create Store` first, then upload files before finishing.",
+                parse_mode="Markdown",
+                reply_markup=admin_keyboard(is_main_admin_user(user_id)),
+            )
+            return True
+
+        await _finish_store_creation(update, context)
         return True
 
     if admin_step == ADMIN_STEP_ADD_ADMIN and is_main_admin_user(user_id):
@@ -253,6 +289,22 @@ async def handle_admin_photo(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return False
     if not is_admin_user(update.effective_user.id if update.effective_user else None):
         return False
+
+    if context.user_data.get(STATE_KEY_ADMIN_STEP) == ADMIN_STEP_STORE_FILES:
+        photo = update.message.photo[-1]
+        _append_store_item(
+            context,
+            file_type="photo",
+            file_id=photo.file_id,
+            caption=update.message.caption or "",
+        )
+        await update.message.reply_text(
+            f"Stored photo #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}. Send more files or tap `Done Creating`.",
+            parse_mode="Markdown",
+            reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
+        )
+        return True
+
     if context.user_data.get(STATE_KEY_ADMIN_STEP) != ADMIN_STEP_BROADCAST_CONTENT:
         return False
 
@@ -286,6 +338,23 @@ async def handle_admin_video(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return False
     if not is_admin_user(update.effective_user.id if update.effective_user else None):
         return False
+
+    if context.user_data.get(STATE_KEY_ADMIN_STEP) == ADMIN_STEP_STORE_FILES:
+        video = update.message.video
+        _append_store_item(
+            context,
+            file_type="video",
+            file_id=video.file_id,
+            file_name=video.file_name or "video.mp4",
+            caption=update.message.caption or "",
+        )
+        await update.message.reply_text(
+            f"Stored video #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}. Send more files or tap `Done Creating`.",
+            parse_mode="Markdown",
+            reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
+        )
+        return True
+
     if context.user_data.get(STATE_KEY_ADMIN_STEP) != ADMIN_STEP_BROADCAST_CONTENT:
         return False
 
@@ -319,6 +388,23 @@ async def handle_admin_document(update: Update, context: ContextTypes.DEFAULT_TY
         return False
     if not is_admin_user(update.effective_user.id if update.effective_user else None):
         return False
+
+    if context.user_data.get(STATE_KEY_ADMIN_STEP) == ADMIN_STEP_STORE_FILES:
+        document = update.message.document
+        _append_store_item(
+            context,
+            file_type="document",
+            file_id=document.file_id,
+            file_name=document.file_name or "stored_file",
+            caption=update.message.caption or "",
+        )
+        await update.message.reply_text(
+            f"Stored file #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}. Send more files or tap `Done Creating`.",
+            parse_mode="Markdown",
+            reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
+        )
+        return True
+
     if context.user_data.get(STATE_KEY_ADMIN_STEP) != ADMIN_STEP_BROADCAST_CONTENT:
         return False
 
@@ -360,10 +446,11 @@ def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
         f"Total jobs: {stats['total_jobs']}\n"
         f"Jobs today: {stats['jobs_today']}\n"
         f"Jobs this week: {stats['jobs_week']}\n"
+        f"Stored bundles: {stats['total_file_stores']}\n"
         f"Admin accounts: {stats['total_admins']}\n"
         f"Uptime: {uptime}\n"
         "Health endpoint: /health\n\n"
-        "Choose an action below to review status, manage admins, or prepare a broadcast."
+        "Choose an action below to review status, manage admins, prepare a broadcast, or create a shared file bundle."
     )
 
 
@@ -374,6 +461,7 @@ def _bot_status_message(context: ContextTypes.DEFAULT_TYPE) -> str:
         "System Status\n\n"
         f"Users tracked: {stats['total_users']}\n"
         f"Admin accounts: {stats['total_admins']}\n"
+        f"Stored bundles: {stats['total_file_stores']}\n"
         f"Total jobs: {stats['total_jobs']}\n"
         f"Uptime: {uptime}\n"
         "Health endpoint: /health\n"
@@ -484,3 +572,67 @@ def _format_uptime(started_at: float | None) -> str:
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f"{hours}h {minutes}m {seconds}s"
+
+
+def _append_store_item(
+    context: ContextTypes.DEFAULT_TYPE,
+    *,
+    file_type: str,
+    file_id: str,
+    file_name: str = "",
+    caption: str = "",
+) -> None:
+    items = context.user_data.setdefault(STATE_KEY_STORE_FILES, [])
+    items.append(
+        {
+            "file_type": file_type,
+            "file_id": file_id,
+            "file_name": file_name,
+            "caption": caption,
+        }
+    )
+
+
+async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not update.message:
+        return
+
+    files = context.user_data.get(STATE_KEY_STORE_FILES, [])
+    user_id = update.effective_user.id if update.effective_user else None
+    if not files or not user_id:
+        await update.message.reply_text(
+            "No files have been added yet. Send at least one file first.",
+            reply_markup=store_creation_keyboard(is_main_admin_user(user_id)),
+        )
+        return
+
+    share_token = secrets.token_urlsafe(8).replace("-", "").replace("_", "")
+    store_id = db.create_file_store(user_id, share_token)
+    context.user_data[STATE_KEY_STORE_ID] = store_id
+
+    for index, item in enumerate(files, start=1):
+        db.add_file_store_item(
+            store_id,
+            item["file_type"],
+            item["file_id"],
+            file_name=item.get("file_name", ""),
+            caption=item.get("caption", ""),
+            sort_order=index,
+        )
+
+    bot_username = context.bot.username or (await context.bot.get_me()).username
+    share_link = (
+        f"https://t.me/{bot_username}?start=store_{share_token}"
+        if bot_username
+        else f"/start store_{share_token}"
+    )
+
+    total_files = len(files)
+    reset_user_state(context.user_data)
+    await update.message.reply_text(
+        "Store created successfully.\n\n"
+        f"Files saved: {total_files}\n"
+        f"Share this link with users:\n{share_link}\n\n"
+        "When a user opens the link and starts the bot, the saved files will be sent automatically.",
+        reply_markup=admin_keyboard(is_main_admin_user(user_id)),
+    )

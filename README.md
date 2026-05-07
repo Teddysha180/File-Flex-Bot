@@ -39,6 +39,7 @@ pip install -r requirements.txt
 ```env
 BOT_TOKEN=your-telegram-bot-token
 DATABASE_URL=your-postgres-connection-string
+DATA_DIR=./data
 ```
 
 3. Start the bot:
@@ -82,6 +83,17 @@ Recommended setup:
 - Set `BOT_TOKEN` in the Render dashboard
 - Let Render build from the included [Dockerfile](./Dockerfile)
 
+Persistence for admin-created stores:
+- Shared file bundles are saved as Telegram `file_id` records in the database
+- The included [render.yaml](./render.yaml) now provisions both:
+- A Render Postgres database for permanent metadata storage
+- A Render persistent disk mounted at `/data` for SQLite fallback and bot working data
+- `REQUIRE_PERSISTENT_STORAGE=true` is enabled on Render so the bot won't silently run with ephemeral storage
+
+Recommended production mode:
+- Use `DATABASE_URL` from Render Postgres for the main persistent storage
+- Keep `DATA_DIR=/data` so temporary files and any SQLite fallback live on the mounted disk instead of the app filesystem
+
 The bot also starts a tiny health endpoint on Render using the `PORT` environment variable:
 - `/`
 - `/health`
@@ -101,4 +113,4 @@ Recommended monitor:
 - Files are stored temporarily in `downloads/` and cleaned up after processing
 - Polling is used, so no Telegram webhook setup is required
 - Docker deployment includes LibreOffice and Ghostscript for the Office/PDF conversions above
-- For free persistent bot memory, set `DATABASE_URL` to an external Postgres database
+- Admin-created share links are durable when `DATABASE_URL` points to Postgres or when `DATA_DIR` is on a persistent disk

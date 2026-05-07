@@ -27,6 +27,7 @@ from handlers.files import (
     unknown_handler,
 )
 from handlers.states import reset_user_state
+from utils.database import db
 from utils.filesystem import ensure_download_dir
 
 
@@ -104,6 +105,7 @@ def build_application() -> Application:
         raise RuntimeError("BOT_TOKEN environment variable is not set.")
 
     ensure_download_dir()
+    db.validate_persistent_storage()
 
     application = Application.builder().token(token).build()
 

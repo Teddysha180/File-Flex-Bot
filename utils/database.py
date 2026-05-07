@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sqlite3
 from datetime import datetime, timedelta
@@ -14,8 +15,9 @@ except ImportError:
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR))).resolve()
+DATA_DIR = config.DATA_DIR
 DB_PATH = DATA_DIR / "bot_database.db"
+logger = logging.getLogger(__name__)
 
 
 class UserDatabase:
@@ -35,6 +37,24 @@ class UserDatabase:
         if self.backend == "postgres":
             return psycopg.connect(self.database_url)
         return sqlite3.connect(self.db_path)
+
+    def validate_persistent_storage(self) -> None:
+        if self.backend == "postgres":
+            logger.info("Persistent storage backend: postgres")
+            return
+
+        if self._is_persistent_sqlite_path():
+            logger.info("Persistent storage backend: sqlite at %s", self.db_path)
+            return
+
+        message = (
+            "Persistent storage is not configured. This bot is using SQLite inside the code directory, "
+            "so admin-created stores can be lost after Render redeploys or filesystem resets. "
+            "Set DATABASE_URL to Postgres or mount a Render persistent disk and point DATA_DIR to it."
+        )
+        if config.REQUIRE_PERSISTENT_STORAGE:
+            raise RuntimeError(message)
+        logger.warning(message)
 
     def _init_db(self) -> None:
         with self._connect() as conn:
@@ -87,6 +107,30 @@ class UserDatabase:
                     CREATE TABLE IF NOT EXISTS admins (
                         user_id BIGINT PRIMARY KEY,
                         added_by BIGINT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS file_stores (
+                        id BIGSERIAL PRIMARY KEY,
+                        share_token TEXT UNIQUE NOT NULL,
+                        created_by BIGINT NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS file_store_items (
+                        id BIGSERIAL PRIMARY KEY,
+                        store_id BIGINT NOT NULL REFERENCES file_stores(id) ON DELETE CASCADE,
+                        file_type TEXT NOT NULL,
+                        file_id TEXT NOT NULL,
+                        file_name TEXT,
+                        caption TEXT,
+                        sort_order INTEGER NOT NULL DEFAULT 0,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                     """
@@ -149,6 +193,31 @@ class UserDatabase:
                         user_id INTEGER PRIMARY KEY,
                         added_by INTEGER,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS file_stores (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        share_token TEXT UNIQUE NOT NULL,
+                        created_by INTEGER NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS file_store_items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        store_id INTEGER NOT NULL,
+                        file_type TEXT NOT NULL,
+                        file_id TEXT NOT NULL,
+                        file_name TEXT,
+                        caption TEXT,
+                        sort_order INTEGER NOT NULL DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY(store_id) REFERENCES file_stores(id) ON DELETE CASCADE
                     )
                     """
                 )
@@ -306,6 +375,129 @@ class UserDatabase:
             cursor.execute("SELECT user_id FROM users ORDER BY created_at ASC")
             return [row[0] for row in cursor.fetchall()]
 
+    def create_file_store(self, created_by: int, share_token: str) -> int:
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            if self.backend == "postgres":
+                cursor.execute(
+                    """
+                    INSERT INTO file_stores (share_token, created_by)
+                    VALUES (%s, %s)
+                    RETURNING id
+                    """,
+                    (share_token, created_by),
+                )
+                store_id = cursor.fetchone()[0]
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO file_stores (share_token, created_by)
+                    VALUES (?, ?)
+                    """,
+                    (share_token, created_by),
+                )
+                store_id = cursor.lastrowid
+            conn.commit()
+            return int(store_id)
+
+    def add_file_store_item(
+        self,
+        store_id: int,
+        file_type: str,
+        file_id: str,
+        *,
+        file_name: str = "",
+        caption: str = "",
+        sort_order: int = 0,
+    ) -> None:
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            params = (store_id, file_type, file_id, file_name, caption, sort_order)
+            if self.backend == "postgres":
+                cursor.execute(
+                    """
+                    INSERT INTO file_store_items
+                    (store_id, file_type, file_id, file_name, caption, sort_order)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    params,
+                )
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO file_store_items
+                    (store_id, file_type, file_id, file_name, caption, sort_order)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    params,
+                )
+            conn.commit()
+
+    def get_file_store(self, share_token: str) -> dict[str, Any] | None:
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            if self.backend == "postgres":
+                cursor.execute(
+                    """
+                    SELECT id, share_token, created_by, created_at
+                    FROM file_stores
+                    WHERE share_token = %s
+                    """,
+                    (share_token,),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT id, share_token, created_by, created_at
+                    FROM file_stores
+                    WHERE share_token = ?
+                    """,
+                    (share_token,),
+                )
+            row = cursor.fetchone()
+            if not row:
+                return None
+            return {
+                "id": row[0],
+                "share_token": row[1],
+                "created_by": row[2],
+                "created_at": row[3],
+            }
+
+    def get_file_store_items(self, store_id: int) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            if self.backend == "postgres":
+                cursor.execute(
+                    """
+                    SELECT file_type, file_id, file_name, caption, sort_order
+                    FROM file_store_items
+                    WHERE store_id = %s
+                    ORDER BY sort_order ASC, id ASC
+                    """,
+                    (store_id,),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT file_type, file_id, file_name, caption, sort_order
+                    FROM file_store_items
+                    WHERE store_id = ?
+                    ORDER BY sort_order ASC, id ASC
+                    """,
+                    (store_id,),
+                )
+            return [
+                {
+                    "file_type": row[0],
+                    "file_id": row[1],
+                    "file_name": row[2] or "",
+                    "caption": row[3] or "",
+                    "sort_order": row[4],
+                }
+                for row in cursor.fetchall()
+            ]
+
     def get_dashboard_stats(self) -> dict[str, Any]:
         with self._connect() as conn:
             cursor = conn.cursor()
@@ -348,6 +540,8 @@ class UserDatabase:
             total_admins = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT(*) FROM processing_history")
             total_jobs = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM file_stores")
+            total_file_stores = cursor.fetchone()[0]
 
             if self.backend == "postgres":
                 cursor.execute(
@@ -388,7 +582,21 @@ class UserDatabase:
                 "total_jobs": total_jobs,
                 "jobs_today": jobs_today,
                 "jobs_week": jobs_week,
+                "total_file_stores": total_file_stores,
             }
+
+    def _is_persistent_sqlite_path(self) -> bool:
+        if self.backend != "sqlite":
+            return False
+
+        if os.getenv("RENDER", "").lower() != "true":
+            return True
+
+        try:
+            self.db_path.relative_to(BASE_DIR)
+            return False
+        except ValueError:
+            return True
 
     def log_processing(
         self,

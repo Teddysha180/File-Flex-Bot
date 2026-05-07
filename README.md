@@ -117,3 +117,4 @@ Recommended monitor:
 
 Redeploy verification note:
 - If `System Status` shows `Storage location: /data/bot_database.db` and `Persistent storage: yes`, newly created shared bundles should survive future redeploys.
+- This note exists only to let us trigger a safe no-op redeploy during persistence testing.

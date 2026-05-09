@@ -3,7 +3,7 @@
 Edit this file when you want to rename buttons or reorder menu items.
 """
 
-BRAND_NAME = "Black"
+BRAND_NAME = "FileFlex Bot"
 BRAND_TAGLINE = "Cloud file workspace"
 
 

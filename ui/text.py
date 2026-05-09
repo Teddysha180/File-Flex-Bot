@@ -12,7 +12,7 @@ def size_label(size_in_bytes: int) -> str:
 
 
 INTRO_ANIMATION_FRAMES = [
-    "Initializing Black workspace...\n`[#---------] 10%`",
+    "Initializing FileFlex Bot workspace...\n`[#---------] 10%`",
     "Connecting services...\n`[###-------] 30%`",
     "Preparing file tools...\n`[######----] 60%`",
     "Loading secure transfer modules...\n`[#########-] 90%`",
@@ -46,12 +46,12 @@ HELP_MESSAGE = (
 
 ACCESS_REQUIRED_MESSAGE = (
     "<b>Access Required</b>\n\n"
-    "Join the updates channel to use Black.\n\n"
+    "Join the updates channel to use FileFlex Bot.\n\n"
     "After joining, tap <b>Verify Access</b> to continue."
 )
 
 ACCESS_CONFIRMED_MESSAGE = (
-    "<b>Access confirmed</b>\n\nYour Black workspace is ready."
+    "<b>Access confirmed</b>\n\nYour FileFlex Bot workspace is ready."
 )
 
 MAIN_MENU_MESSAGE = "<b>Main Menu</b>\n\nChoose a tool to continue."

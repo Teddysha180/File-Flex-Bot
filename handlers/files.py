@@ -42,6 +42,7 @@ from handlers.keyboards import (
     convert_to_pdf_keyboard,
     convert_keyboard_for_buttons,
     home_keyboard,
+    main_menu_keyboard,
     image_format_conversion_keyboard,
     merge_keyboard,
 )
@@ -721,6 +722,20 @@ def _available_conversions_message() -> str:
 
 def _conversion_unavailable_message(conversion_target: str) -> str:
     return conversion_unavailable_message(conversion_target)
+
+
+async def handle_inline_home_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not query:
+        return
+
+    await query.answer()
+    reset_user_state(context.user_data)
+    await query.edit_message_text(
+        MAIN_MENU_MESSAGE,
+        reply_markup=main_menu_keyboard(),
+        parse_mode="HTML",
+    )
 
 
 async def handle_conversion_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

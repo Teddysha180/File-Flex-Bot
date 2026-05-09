@@ -52,8 +52,9 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
     payload_parts = payload.split("_")
     if len(payload_parts) != 3:
         await update.message.reply_text(
-            "That shared file link is invalid or no longer available.",
+            "❌ *Invalid Link*: This shareable URL is malformed or has expired.",
             reply_markup=home_keyboard(),
+            parse_mode="Markdown"
         )
         return True
 
@@ -62,21 +63,24 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
         end_message_id = int(payload_parts[2])
     except ValueError:
         await update.message.reply_text(
-            "That shared file link is invalid or no longer available.",
+            "❌ *Invalid Link*: This shareable URL is malformed or has expired.",
             reply_markup=home_keyboard(),
+            parse_mode="Markdown"
         )
         return True
 
     if start_message_id <= 0 or end_message_id < start_message_id:
         await update.message.reply_text(
-            "That shared file link is invalid or no longer available.",
+            "❌ *Invalid Link*: This shareable URL is malformed or has expired.",
             reply_markup=home_keyboard(),
+            parse_mode="Markdown"
         )
         return True
 
     preparing_message = await update.message.reply_text(
-        f"Preparing {end_message_id - start_message_id + 1} shared file(s) for you...",
+        f"⚙️ *Retrieving {end_message_id - start_message_id + 1} files* from the secure vault...",
         reply_markup=home_keyboard(),
+        parse_mode="Markdown"
     )
     _schedule_message_deletion(context, update.effective_chat.id, preparing_message.message_id)
 
@@ -95,14 +99,17 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
 
     if not sent_message_ids:
         await update.message.reply_text(
-            "That shared file link is invalid or no longer available.",
+            "❌ *Access Error*: We couldn't retrieve those files. They may have been removed.",
             reply_markup=home_keyboard(),
+            parse_mode="Markdown"
         )
         return True
 
     warning_message = await update.message.reply_text(
-        "⚠️ Important:\n\n"
-        "All Messages will be deleted after 5 minutes. Please save or forward these messages to your personal saved messages to avoid losing them!"
+        "⚠️ *Auto-Cleanup Warning*\n\n"
+        "For privacy and storage efficiency, these files will be automatically deleted from this chat in *5 minutes*.\n\n"
+        "Please forward them to your *Saved Messages* if you need to keep them.",
+        parse_mode="Markdown"
     )
     sent_message_ids.append(warning_message.message_id)
 

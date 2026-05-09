@@ -1,0 +1,85 @@
+"""Central place for button labels and menu organization.
+
+Edit this file when you want to rename buttons or reorder menu items.
+"""
+
+BRAND_NAME = "Black"
+BRAND_TAGLINE = "Cloud file workspace"
+
+
+# Main menu
+BTN_CONVERT_FILES = "Convert Files"
+BTN_COMPRESS_IMAGE = "Compress Image"
+BTN_EXTRACT_ZIP = "Extract ZIP"
+BTN_RENAME_FILE = "Rename File"
+BTN_MERGE_PDF = "Merge PDF"
+BTN_SPLIT_PDF = "Split PDF"
+BTN_HELP = "Help Center"
+BTN_HOME = "Main Menu"
+
+HOME_MENU_ROWS = [
+    [BTN_CONVERT_FILES, BTN_COMPRESS_IMAGE],
+    [BTN_MERGE_PDF, BTN_SPLIT_PDF],
+    [BTN_EXTRACT_ZIP, BTN_RENAME_FILE],
+    [BTN_HELP],
+]
+
+
+# Conversion menu
+BTN_JPG_TO_PDF = "JPG to PDF"
+BTN_WORD_TO_PDF = "Word to PDF"
+BTN_POWERPOINT_TO_PDF = "PowerPoint to PDF"
+BTN_EXCEL_TO_PDF = "Excel to PDF"
+BTN_HTML_TO_PDF = "HTML to PDF"
+BTN_PDF_TO_JPG = "PDF to JPG"
+BTN_PDF_TO_WORD = "PDF to Word"
+BTN_PDF_TO_POWERPOINT = "PDF to PowerPoint"
+BTN_PDF_TO_EXCEL = "PDF to Excel"
+BTN_PDF_TO_PDFA = "PDF to PDF/A"
+BTN_JPG_TO_PNG = "JPG to PNG"
+BTN_PNG_TO_JPG = "PNG to JPG"
+
+CONVERSION_BUTTON_ORDER = [
+    BTN_JPG_TO_PDF,
+    BTN_WORD_TO_PDF,
+    BTN_POWERPOINT_TO_PDF,
+    BTN_EXCEL_TO_PDF,
+    BTN_HTML_TO_PDF,
+    BTN_PDF_TO_JPG,
+    BTN_PDF_TO_WORD,
+    BTN_PDF_TO_POWERPOINT,
+    BTN_PDF_TO_EXCEL,
+    BTN_PDF_TO_PDFA,
+    BTN_JPG_TO_PNG,
+    BTN_PNG_TO_JPG,
+]
+
+
+# Admin menu
+BTN_DONE = "Finish Merge"
+BTN_ADMIN_DASHBOARD = "Dashboard"
+BTN_ADMIN_STATUS = "System Status"
+BTN_ADMIN_ADMINS = "Admins"
+BTN_ADMIN_BROADCAST = "Broadcast"
+BTN_ADMIN_CREATE_STORE = "Create Share Link"
+BTN_ADMIN_FINISH_STORE = "Generate Link"
+BTN_ADMIN_STORES = "Sharing Guide"
+BTN_ADMIN_POST = "Publish"
+BTN_ADMIN_ADD_ADMIN = "Add Admin"
+BTN_ADMIN_REMOVE_ADMIN = "Remove Admin"
+BTN_ADMIN_CANCEL = "Cancel"
+
+ADMIN_MENU_ROWS = [
+    [BTN_ADMIN_DASHBOARD, BTN_ADMIN_STATUS],
+    [BTN_ADMIN_ADMINS, BTN_ADMIN_BROADCAST],
+    [BTN_ADMIN_CREATE_STORE, BTN_ADMIN_FINISH_STORE],
+    [BTN_ADMIN_STORES],
+]
+
+ADMIN_MAIN_ONLY_ROWS = [
+    [BTN_ADMIN_ADD_ADMIN, BTN_ADMIN_REMOVE_ADMIN],
+]
+
+ADMIN_FOOTER_ROWS = [
+    [BTN_HOME, BTN_ADMIN_CANCEL],
+]

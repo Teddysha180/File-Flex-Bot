@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes
 
 from handlers.admin import is_admin_user
 from handlers.keyboards import home_keyboard
+from ui.text import ACCESS_CONFIRMED_MESSAGE, ACCESS_REQUIRED_MESSAGE
 from utils.config import config
 
 JOIN_CHECK_CALLBACK = "join_check"
@@ -39,9 +40,7 @@ async def ensure_channel_membership(update: Update, context: ContextTypes.DEFAUL
         ]
     )
     await message.reply_text(
-        "<b>Access Required</b>\n\n"
-        "Join the updates channel to use Black.\n\n"
-        "After joining, tap <b>Verify Access</b> to continue.",
+        ACCESS_REQUIRED_MESSAGE,
         reply_markup=join_keyboard,
         parse_mode="HTML"
     )
@@ -56,7 +55,7 @@ async def handle_join_check_callback(update: Update, context: ContextTypes.DEFAU
     if await is_channel_member(update, context):
         await query.answer("Access confirmed.")
         await query.edit_message_text(
-            "<b>Access confirmed</b>\n\nYour Black workspace is ready.",
+            ACCESS_CONFIRMED_MESSAGE,
             parse_mode="HTML"
         )
         await context.bot.send_message(

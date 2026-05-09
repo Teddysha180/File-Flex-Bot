@@ -36,8 +36,13 @@ from handlers.keyboards import (
     BTN_RENAME_FILE,
     BTN_SPLIT_PDF,
     BTN_WORD_TO_PDF,
+    back_to_menu_keyboard,
+    conversion_keyboard,
+    convert_from_pdf_keyboard,
+    convert_to_pdf_keyboard,
     convert_keyboard_for_buttons,
     home_keyboard,
+    image_format_conversion_keyboard,
     merge_keyboard,
 )
 from handlers.messages import HELP_MESSAGE
@@ -56,6 +61,33 @@ from handlers.states import (
     STATE_KEY_PENDING_FILES,
     STATE_KEY_PENDING_INPUT,
     reset_user_state,
+)
+from ui.text import (
+    DEFAULT_FALLBACK_MESSAGE,
+    DOCUMENT_TOOL_REQUIRED_MESSAGE,
+    EMPTY_MERGE_QUEUE_MESSAGE,
+    EXTRACTION_COMPLETE_MESSAGE,
+    INLINE_CONVERSION_SELECTOR_MESSAGE,
+    INLINE_FROM_PDF_MESSAGE,
+    INLINE_IMAGE_FORMATS_MESSAGE,
+    INLINE_TO_PDF_MESSAGE,
+    MAIN_MENU_MESSAGE,
+    PHOTO_PROCESSING_FAILED_MESSAGE,
+    PHOTO_TOOL_REQUIRED_MESSAGE,
+    RENAME_FILE_RECEIVED_MESSAGE,
+    SPLIT_FILE_RECEIVED_MESSAGE,
+    UNEXPECTED_ERROR_MESSAGE,
+    UNKNOWN_REQUEST_MESSAGE,
+    VIDEO_DISABLED_MESSAGE,
+    WAIT_ANIMATION_FRAMES,
+    WAIT_TITLES,
+    conversion_list_message,
+    conversion_prompt,
+    conversion_unavailable_message,
+    merge_queue_message,
+    request_unavailable_message,
+    result_caption,
+    tool_intro_message,
 )
 from utils.config import config
 from utils.filesystem import (
@@ -95,18 +127,6 @@ CONVERSION_BUTTONS = {
     BTN_PNG_TO_JPG: "png_to_jpg",
 }
 
-WAIT_ANIMATION_FRAMES = [
-    "Processing.",
-    "Processing..",
-    "Processing...",
-    "Finalizing...",
-]
-
-
-def _size_label(size_in_bytes: int) -> str:
-    return f"{round(size_in_bytes / (1024 * 1024))} MB"
-
-
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.photo:
         return
@@ -122,7 +142,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     action = context.user_data.get(STATE_KEY_ACTION)
     if action not in {ACTION_COMPRESS_IMAGE, ACTION_CONVERT_FILE}:
         await update.message.reply_text(
-            "Choose a tool from the main menu before uploading an image.",
+            PHOTO_TOOL_REQUIRED_MESSAGE,
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -139,7 +159,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         logger.exception("Failed to process photo")
         reset_user_state(context.user_data)
         await update.message.reply_text(
-            "<b>Processing failed</b>\n\nThis image could not be processed.",
+            PHOTO_PROCESSING_FAILED_MESSAGE,
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -160,7 +180,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     action = context.user_data.get(STATE_KEY_ACTION)
     if not action:
         await update.message.reply_text(
-            "Choose a tool from the menu before uploading a file.",
+            DOCUMENT_TOOL_REQUIRED_MESSAGE,
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -180,7 +200,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             context.user_data[STATE_KEY_PENDING_FILE] = str(input_path)
             context.user_data[STATE_KEY_PENDING_EXTENSION] = Path(file_name).suffix
             await update.message.reply_text(
-                "<b>File uploaded</b>\n\nSend the new file name. Include the extension if you want to change it.",
+                RENAME_FILE_RECEIVED_MESSAGE,
                 reply_markup=home_keyboard(),
                 parse_mode="HTML",
             )
@@ -192,7 +212,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             pending_files = context.user_data.setdefault(STATE_KEY_PENDING_FILES, [])
             pending_files.append(str(input_path))
             await update.message.reply_text(
-                f"<b>Added to merge queue</b>\n\n{len(pending_files)} PDF file(s) ready.\nSend another PDF or tap <b>Finish Merge</b>.",
+                merge_queue_message(len(pending_files)),
                 reply_markup=merge_keyboard(),
                 parse_mode="HTML",
             )
@@ -202,7 +222,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             context.user_data[STATE_KEY_PENDING_FILE] = str(input_path)
             context.user_data[STATE_KEY_PENDING_INPUT] = "range"
             await update.message.reply_text(
-                "<b>PDF uploaded</b>\n\nSend the page range to extract, for example <code>1-5</code>.",
+                SPLIT_FILE_RECEIVED_MESSAGE,
                 reply_markup=home_keyboard(),
                 parse_mode="HTML",
             )
@@ -211,7 +231,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await _process_file_action(update, context, input_path)
     except ValueError as exc:
         await update.message.reply_text(
-            f"<b>Request unavailable</b>\n\n{str(exc)}",
+            request_unavailable_message(str(exc)),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -220,7 +240,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         logger.exception("Failed to process document")
         reset_user_state(context.user_data)
         await update.message.reply_text(
-            "<b>Something went wrong</b>\n\nPlease return to the main menu and try again.",
+            UNEXPECTED_ERROR_MESSAGE,
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -243,7 +263,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if text == BTN_HOME:
         reset_user_state(context.user_data)
         await update.message.reply_text(
-            "<b>Main Menu</b>\n\nChoose a tool to continue.",
+            MAIN_MENU_MESSAGE,
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -257,10 +277,9 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     if text == BTN_CONVERT_FILES:
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
-        available_buttons = _available_conversion_buttons()
         await update.message.reply_text(
-            _available_conversions_message(),
-            reply_markup=convert_keyboard_for_buttons(available_buttons),
+            INLINE_CONVERSION_SELECTOR_MESSAGE,
+            reply_markup=conversion_keyboard(),
             parse_mode="HTML",
         )
         return
@@ -289,9 +308,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_EXTRACT_ZIP
         await update.message.reply_text(
-            "<b>Extract ZIP</b>\n\n"
-            "Upload a ZIP file to extract its contents.\n\n"
-            f"<b>Limit:</b> {_size_label(config.ZIP_MAX_FILE_SIZE)}",
+            tool_intro_message("extract_zip"),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -301,9 +318,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_COMPRESS_IMAGE
         await update.message.reply_text(
-            "<b>Compress Image</b>\n\n"
-            "Upload an image to reduce file size while keeping good visual quality.\n\n"
-            f"<b>Limit:</b> {_size_label(config.MAX_FILE_SIZE)}",
+            tool_intro_message("compress_image"),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -313,9 +328,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_RENAME_FILE
         await update.message.reply_text(
-            "<b>Rename File</b>\n\n"
-            "Upload a file first, then send the new name you want to use.\n\n"
-            f"<b>Limit:</b> {_size_label(config.MAX_FILE_SIZE)}",
+            tool_intro_message("rename_file"),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -326,9 +339,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ACTION] = ACTION_MERGE_PDF
         context.user_data[STATE_KEY_PENDING_FILES] = []
         await update.message.reply_text(
-            "<b>Merge PDF</b>\n\n"
-            "Upload PDF files in the order you want them merged, then tap <b>Finish Merge</b>.\n\n"
-            f"<b>Limit:</b> {_size_label(config.MAX_FILE_SIZE)}",
+            tool_intro_message("merge_pdf"),
             reply_markup=merge_keyboard(),
             parse_mode="HTML",
         )
@@ -338,9 +349,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_SPLIT_PDF
         await update.message.reply_text(
-            "<b>Split PDF</b>\n\n"
-            "Upload a PDF, then send the page range you want to extract.\n\n"
-            f"<b>Limit:</b> {_size_label(config.MAX_FILE_SIZE)}",
+            tool_intro_message("split_pdf"),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -363,7 +372,7 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         return
 
     await update.message.reply_text(
-        "Choose a tool from the menu to begin.",
+        DEFAULT_FALLBACK_MESSAGE,
         reply_markup=home_keyboard(),
         parse_mode="HTML",
     )
@@ -375,7 +384,7 @@ async def unknown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
     if update.message:
         await update.message.reply_text(
-            "Please choose one of the available tools from the menu.",
+            UNKNOWN_REQUEST_MESSAGE,
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -394,7 +403,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     await update.message.reply_text(
-        "<b>Video uploads unavailable</b>\n\nDirect video uploads are only available in admin broadcast mode.",
+        VIDEO_DISABLED_MESSAGE,
         reply_markup=home_keyboard(),
         parse_mode="HTML",
     )
@@ -426,7 +435,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
                     )
 
             await update.message.reply_text(
-                "<b>Extraction complete</b>\n\nYour files are ready.",
+                EXTRACTION_COMPLETE_MESSAGE,
                 reply_markup=home_keyboard(),
                 parse_mode="HTML",
             )
@@ -438,7 +447,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
             with compressed_path.open("rb") as file_handle:
                 await update.message.reply_document(
                     document=InputFile(file_handle, filename=compressed_path.name),
-                    caption="<b>Completed</b>\n\nYour compressed image is ready.",
+                    caption=result_caption("compressed image"),
                     reply_markup=home_keyboard(),
                     parse_mode="HTML",
                 )
@@ -455,7 +464,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
             with converted_path.open("rb") as file_handle:
                 await update.message.reply_document(
                     document=InputFile(file_handle, filename=converted_path.name),
-                    caption="<b>Completed</b>\n\nYour converted file is ready.",
+                    caption=result_caption("converted file"),
                     reply_markup=home_keyboard(),
                     parse_mode="HTML",
                 )
@@ -465,7 +474,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
         raise ValueError("Choose a tool from the menu first.")
     except ValueError as exc:
         await update.message.reply_text(
-            f"<b>Request unavailable</b>\n\n{str(exc)}",
+            request_unavailable_message(str(exc)),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -495,7 +504,7 @@ async def _finish_rename(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
         with renamed_path.open("rb") as file_handle:
             await update.message.reply_document(
                 document=InputFile(file_handle, filename=renamed_path.name),
-                caption="<b>Completed</b>\n\nYour renamed file is ready.",
+                caption=result_caption("renamed file"),
                 reply_markup=home_keyboard(),
                 parse_mode="HTML",
             )
@@ -503,7 +512,7 @@ async def _finish_rename(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
         reset_user_state(context.user_data)
     except ValueError as exc:
         await update.message.reply_text(
-            f"<b>Request unavailable</b>\n\n{str(exc)}",
+            request_unavailable_message(str(exc)),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -511,7 +520,7 @@ async def _finish_rename(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
         logger.exception("Failed to finish rename")
         reset_user_state(context.user_data)
         await update.message.reply_text(
-            "<b>Rename failed</b>\n\nPlease check the file name and try again.",
+            request_unavailable_message("Please check the file name and try again."),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -542,7 +551,7 @@ async def _finish_split(update: Update, context: ContextTypes.DEFAULT_TYPE, text
         with split_path.open("rb") as file_handle:
             await update.message.reply_document(
                 document=InputFile(file_handle, filename=split_path.name),
-                caption="<b>Completed</b>\n\nYour split PDF is ready.",
+                caption=result_caption("split PDF"),
                 reply_markup=home_keyboard(),
                 parse_mode="HTML",
             )
@@ -550,7 +559,7 @@ async def _finish_split(update: Update, context: ContextTypes.DEFAULT_TYPE, text
         reset_user_state(context.user_data)
     except ValueError as exc:
         await update.message.reply_text(
-            f"<b>Request unavailable</b>\n\n{str(exc)}",
+            request_unavailable_message(str(exc)),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -568,7 +577,7 @@ async def _finish_merge(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     pending_files = context.user_data.get(STATE_KEY_PENDING_FILES, [])
     if action != ACTION_MERGE_PDF or not pending_files:
         await update.message.reply_text(
-            "<b>Merge queue is empty</b>\n\nUpload at least one PDF file first.",
+            EMPTY_MERGE_QUEUE_MESSAGE,
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -583,14 +592,14 @@ async def _finish_merge(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         with output_path.open("rb") as file_handle:
             await update.message.reply_document(
                 document=InputFile(file_handle, filename=output_path.name),
-                caption="<b>Completed</b>\n\nYour merged PDF is ready.",
+                caption=result_caption("merged PDF"),
                 reply_markup=home_keyboard(),
                 parse_mode="HTML",
             )
         reset_user_state(context.user_data)
     except ValueError as exc:
         await update.message.reply_text(
-            f"<b>Request unavailable</b>\n\n{str(exc)}",
+            request_unavailable_message(str(exc)),
             reply_markup=home_keyboard(),
             parse_mode="HTML",
         )
@@ -636,12 +645,12 @@ async def _animate_wait_message(wait_message, title: str) -> None:
 
 def _wait_title_for_action(action: str | None) -> str:
     if action == ACTION_EXTRACT_ZIP:
-        return "Extracting ZIP"
+        return WAIT_TITLES["extract_zip"]
     if action == ACTION_COMPRESS_IMAGE:
-        return "Compressing image"
+        return WAIT_TITLES["compress_image"]
     if action == ACTION_CONVERT_FILE:
-        return "Converting file"
-    return "Processing"
+        return WAIT_TITLES["convert_file"]
+    return WAIT_TITLES["default"]
 
 
 def _get_or_create_job_dir(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Path:
@@ -692,22 +701,7 @@ def _validate_conversion_input(input_path: Path, conversion_target: str) -> None
 
 
 def _conversion_prompt(conversion_target: str) -> str:
-    prompts = {
-        "jpg_to_pdf": "<b>JPG to PDF</b>\n\nUpload a JPG image.",
-        "word_to_pdf": "<b>Word to PDF</b>\n\nUpload a DOC or DOCX file.",
-        "powerpoint_to_pdf": "<b>PowerPoint to PDF</b>\n\nUpload a PPT or PPTX file.",
-        "excel_to_pdf": "<b>Excel to PDF</b>\n\nUpload an XLS or XLSX file.",
-        "html_to_pdf": "<b>HTML to PDF</b>\n\nUpload an HTML file.",
-        "pdf_to_jpg": "<b>PDF to JPG</b>\n\nUpload a PDF file.",
-        "pdf_to_word": "<b>PDF to Word</b>\n\nUpload a PDF file.",
-        "pdf_to_powerpoint": "<b>PDF to PowerPoint</b>\n\nUpload a PDF file.",
-        "pdf_to_excel": "<b>PDF to Excel</b>\n\nUpload a PDF file.",
-        "pdf_to_pdfa": "<b>PDF to PDF/A</b>\n\nUpload a PDF file.",
-        "jpg_to_png": "<b>JPG to PNG</b>\n\nUpload a JPG image.",
-        "png_to_jpg": "<b>PNG to JPG</b>\n\nUpload a PNG image.",
-    }
-    base_prompt = prompts.get(conversion_target, "Upload the file you want to convert.")
-    return f"{base_prompt}\n\n<b>Limit:</b> {_size_label(config.MAX_FILE_SIZE)}"
+    return conversion_prompt(conversion_target)
 
 
 def _available_conversion_buttons() -> list[str]:
@@ -719,43 +713,89 @@ def _available_conversion_buttons() -> list[str]:
 
 
 def _available_conversions_message() -> str:
-    lines = [
-        "<b>Convert Files</b>",
-        "",
-        "Choose a conversion type below.",
-        "",
-        "<b>To PDF</b>: JPG, Word, PowerPoint, Excel, HTML",
-        "<b>From PDF</b>: JPG, Word, PowerPoint, Excel, PDF/A",
-        "<b>Image formats</b>: JPG, PNG",
-    ]
-
-    if not is_libreoffice_available():
-        lines.extend(
-            [
-                "",
-                "<b>Notice:</b> Office to PDF conversions are currently unavailable.",
-            ]
-        )
-
-    if not is_ghostscript_available():
-        lines.append("<b>Notice:</b> PDF/A conversion is currently unavailable.")
-
-    lines.extend(["", "Select a conversion or return to the main menu."])
-
-    return "\n".join(lines)
+    return conversion_list_message(
+        libreoffice_available=is_libreoffice_available(),
+        ghostscript_available=is_ghostscript_available(),
+    )
 
 
 def _conversion_unavailable_message(conversion_target: str) -> str:
-    if conversion_target in {"word_to_pdf", "powerpoint_to_pdf", "excel_to_pdf", "html_to_pdf"}:
-        return (
-            "<b>Conversion unavailable</b>\n\n"
-            "Office conversions require LibreOffice, which is not available on this server."
-        )
+    return conversion_unavailable_message(conversion_target)
 
-    if conversion_target == "pdf_to_pdfa":
-        return (
-            "<b>Conversion unavailable</b>\n\n"
-            "PDF/A conversion requires Ghostscript, which is not installed on this server."
-        )
 
-    return "<b>Conversion unavailable</b>\n\nThis conversion is not available right now."
+async def handle_conversion_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not query:
+        return
+
+    data = query.data or ""
+    if not data.startswith("menu:convert:"):
+        return
+
+    await query.answer()
+
+    if data == "menu:convert:to_pdf_menu":
+        reset_user_state(context.user_data)
+        context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
+        await query.edit_message_text(
+            INLINE_TO_PDF_MESSAGE,
+            reply_markup=convert_to_pdf_keyboard(),
+            parse_mode="HTML",
+        )
+        return
+
+    if data == "menu:convert:from_pdf_menu":
+        reset_user_state(context.user_data)
+        context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
+        await query.edit_message_text(
+            INLINE_FROM_PDF_MESSAGE,
+            reply_markup=convert_from_pdf_keyboard(),
+            parse_mode="HTML",
+        )
+        return
+
+    if data == "menu:convert:image_formats_menu":
+        reset_user_state(context.user_data)
+        context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
+        await query.edit_message_text(
+            INLINE_IMAGE_FORMATS_MESSAGE,
+            reply_markup=image_format_conversion_keyboard(),
+            parse_mode="HTML",
+        )
+        return
+
+    conversion_map = {
+        "menu:convert:jpg_to_png": "jpg_to_png",
+        "menu:convert:png_to_jpg": "png_to_jpg",
+        "menu:convert:jpg_to_pdf": "jpg_to_pdf",
+        "menu:convert:word_to_pdf": "word_to_pdf",
+        "menu:convert:powerpoint_to_pdf": "powerpoint_to_pdf",
+        "menu:convert:excel_to_pdf": "excel_to_pdf",
+        "menu:convert:html_to_pdf": "html_to_pdf",
+        "menu:convert:pdf_to_jpg": "pdf_to_jpg",
+        "menu:convert:pdf_to_word": "pdf_to_word",
+        "menu:convert:pdf_to_powerpoint": "pdf_to_powerpoint",
+        "menu:convert:pdf_to_excel": "pdf_to_excel",
+        "menu:convert:pdf_to_pdfa": "pdf_to_pdfa",
+    }
+
+    conversion_target = conversion_map.get(data)
+    if not conversion_target:
+        return
+
+    if not is_conversion_available(conversion_target):
+        await query.edit_message_text(
+            _conversion_unavailable_message(conversion_target),
+            reply_markup=back_to_menu_keyboard(),
+            parse_mode="HTML",
+        )
+        return
+
+    reset_user_state(context.user_data)
+    context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
+    context.user_data[STATE_KEY_CONVERSION_TARGET] = conversion_target
+    await query.edit_message_text(
+        _conversion_prompt(conversion_target),
+        reply_markup=back_to_menu_keyboard(),
+        parse_mode="HTML",
+    )

@@ -9,6 +9,12 @@ from handlers.access import ensure_channel_membership
 from handlers.keyboards import home_keyboard
 from handlers.messages import HELP_MESSAGE, INTRO_ANIMATION_FRAMES, WELCOME_MESSAGE
 from handlers.states import reset_user_state
+from ui.text import (
+    TEMPORARY_DELIVERY_MESSAGE,
+    link_unavailable_message,
+    preparing_share_message,
+    share_files_unavailable_message,
+)
 from utils.config import config
 from utils.database import db
 
@@ -52,7 +58,7 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
     payload_parts = payload.split("_")
     if len(payload_parts) != 3:
         await update.message.reply_text(
-            "<b>Link unavailable</b>\n\nThis share link is invalid or has expired.",
+            link_unavailable_message(),
             reply_markup=home_keyboard(),
             parse_mode="HTML"
         )
@@ -63,7 +69,7 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
         end_message_id = int(payload_parts[2])
     except ValueError:
         await update.message.reply_text(
-            "<b>Link unavailable</b>\n\nThis share link is invalid or has expired.",
+            link_unavailable_message(),
             reply_markup=home_keyboard(),
             parse_mode="HTML"
         )
@@ -71,14 +77,14 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
 
     if start_message_id <= 0 or end_message_id < start_message_id:
         await update.message.reply_text(
-            "<b>Link unavailable</b>\n\nThis share link is invalid or has expired.",
+            link_unavailable_message(),
             reply_markup=home_keyboard(),
             parse_mode="HTML"
         )
         return True
 
     preparing_message = await update.message.reply_text(
-        f"Preparing {end_message_id - start_message_id + 1} file(s)...",
+        preparing_share_message(end_message_id - start_message_id + 1),
         reply_markup=home_keyboard(),
         parse_mode="HTML"
     )
@@ -99,16 +105,14 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
 
     if not sent_message_ids:
         await update.message.reply_text(
-            "<b>Files unavailable</b>\n\nThese files could not be retrieved. They may have been removed.",
+            share_files_unavailable_message(),
             reply_markup=home_keyboard(),
             parse_mode="HTML"
         )
         return True
 
     warning_message = await update.message.reply_text(
-        "<b>Temporary delivery</b>\n\n"
-        "These files will be removed from this chat in 5 minutes.\n\n"
-        "Forward them to Saved Messages if you want to keep a copy.",
+        TEMPORARY_DELIVERY_MESSAGE,
         parse_mode="HTML"
     )
     sent_message_ids.append(warning_message.message_id)

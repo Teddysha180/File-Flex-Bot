@@ -22,15 +22,15 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
     if update.message:
         intro_message = await update.message.reply_text(
-            INTRO_ANIMATION_FRAMES[0], # This is plain text, so Markdown is fine.
-            parse_mode="Markdown", # No change
+            INTRO_ANIMATION_FRAMES[0],
+            parse_mode="Markdown",
         )
         for frame in INTRO_ANIMATION_FRAMES[1:]:
             await asyncio.sleep(0.35)
-            await intro_message.edit_text(frame, parse_mode="Markdown") # No change
+            await intro_message.edit_text(frame, parse_mode="Markdown")
 
         await asyncio.sleep(0.25)
-        await update.message.reply_text(WELCOME_MESSAGE, reply_markup=home_keyboard())
+        await update.message.reply_text(WELCOME_MESSAGE, reply_markup=home_keyboard(), parse_mode="HTML")
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -52,7 +52,7 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
     payload_parts = payload.split("_")
     if len(payload_parts) != 3:
         await update.message.reply_text(
-            "<b>Error</b>: This link is invalid or has expired.",
+            "<b>Link unavailable</b>\n\nThis share link is invalid or has expired.",
             reply_markup=home_keyboard(),
             parse_mode="HTML"
         )
@@ -63,7 +63,7 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
         end_message_id = int(payload_parts[2])
     except ValueError:
         await update.message.reply_text(
-            "<b>Error</b>: This link is invalid or has expired.",
+            "<b>Link unavailable</b>\n\nThis share link is invalid or has expired.",
             reply_markup=home_keyboard(),
             parse_mode="HTML"
         )
@@ -71,14 +71,14 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
 
     if start_message_id <= 0 or end_message_id < start_message_id:
         await update.message.reply_text(
-            "<b>Error</b>: This link is invalid or has expired.",
+            "<b>Link unavailable</b>\n\nThis share link is invalid or has expired.",
             reply_markup=home_keyboard(),
             parse_mode="HTML"
         )
         return True
 
     preparing_message = await update.message.reply_text(
-        f"Retrieving {end_message_id - start_message_id + 1} files...",
+        f"Preparing {end_message_id - start_message_id + 1} file(s)...",
         reply_markup=home_keyboard(),
         parse_mode="HTML"
     )
@@ -99,16 +99,16 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
 
     if not sent_message_ids:
         await update.message.reply_text(
-            "<b>Error</b>: Unable to retrieve files. They may have been removed.",
+            "<b>Files unavailable</b>\n\nThese files could not be retrieved. They may have been removed.",
             reply_markup=home_keyboard(),
             parse_mode="HTML"
         )
         return True
 
     warning_message = await update.message.reply_text(
-        "<b>Privacy Notice</b>\n\n"
-        "These files will be automatically deleted from this chat in 5 minutes.\n\n"
-        "Please forward them to your Saved Messages if you need to keep them.",
+        "<b>Temporary delivery</b>\n\n"
+        "These files will be removed from this chat in 5 minutes.\n\n"
+        "Forward them to Saved Messages if you want to keep a copy.",
         parse_mode="HTML"
     )
     sent_message_ids.append(warning_message.message_id)

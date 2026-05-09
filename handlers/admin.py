@@ -80,8 +80,9 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     reset_user_state(context.user_data)
     if update.message:
         await update.message.reply_text(
-            _dashboard_message(context),
+            _dashboard_message(context), # parse_mode is set in _dashboard_message
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
+            parse_mode="HTML"
         )
 
 
@@ -102,7 +103,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(
             _dashboard_message(context),
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -111,7 +112,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(
             _bot_status_message(context),
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -120,7 +121,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(
             _admins_message(),
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -129,7 +130,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(
             await _stores_message(context),
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -137,17 +138,17 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CONTENT
         await update.message.reply_text(
-            "**BROADCAST STUDIO**\n\n"
+            "⬛ <b>BROADCAST STUDIO</b>\n\n"
             "Step 1 of 3\n"
             "Send the message or media for this broadcast.\n\n"
-            "Supported formats:\n"
+            "<b>Supported formats:</b>\n"
             "• Text\n"
             "• Photo\n"
             "• Video\n"
             "• Document\n\n"
             "If you send media, you can include the caption immediately.",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -156,11 +157,11 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_STORE_FILES
         context.user_data[STATE_KEY_STORE_FILES] = []
         await update.message.reply_text(
-            "**SHARE LINK CREATOR**\n\n"
+            "⬛ <b>SHARE LINK CREATOR</b>\n\n"
             "Upload the files (Docs, Photos, or Videos) you want to bundle. "
-            "When finished, select Create Link to generate a professional shareable URL.",
+            "When finished, tap Create Link to generate a professional shareable URL.",
             reply_markup=store_creation_keyboard(is_main_admin_user(user_id)),
-            parse_mode="Markdown",
+            parse_mode="HTML",
         )
         return True
 
@@ -168,9 +169,9 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_ADD_ADMIN
         await update.message.reply_text(
-            "**Manage Administrators**: Please send the Telegram User ID of the new administrator.",
+            "👤 <b>PROMOTE ADMIN</b>: Please send the Telegram User ID of the new administrator.",
             reply_markup=admin_keyboard(True),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -178,9 +179,9 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_REMOVE_ADMIN
         await update.message.reply_text(
-            "**Manage Administrators**: Please send the Telegram User ID you wish to remove.",
+            "🗑 <b>REVOKE ADMIN</b>: Please send the Telegram User ID you wish to remove.",
             reply_markup=admin_keyboard(True),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -189,7 +190,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.message.reply_text(
             "Canceled. You are back in the admin workspace.",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -197,7 +198,7 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         if admin_step != ADMIN_STEP_STORE_FILES:
             await update.message.reply_text(
                 "Start `New Share Link` first, then upload files before creating the link.",
-                parse_mode="Markdown",
+                parse_mode="HTML",
                 reply_markup=admin_keyboard(is_main_admin_user(user_id)),
             )
             return True
@@ -210,12 +211,12 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             admin_id = int(text)
             db.add_admin(admin_id, user_id)
             await update.message.reply_text(
-                f"**Success**: Admin {admin_id} has been added.",
+                f"✅ <b>SUCCESS</b>: Admin {admin_id} has been added.",
                 reply_markup=admin_keyboard(True),
-                parse_mode="Markdown",
+                parse_mode="HTML",
             )
         except ValueError:
-            await update.message.reply_text("**Error**: Please provide a valid numeric User ID.", parse_mode="Markdown")
+            await update.message.reply_text("<b>Error</b>: Please provide a valid numeric User ID.", parse_mode="HTML")
         finally:
             reset_user_state(context.user_data)
         return True
@@ -224,14 +225,14 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         try:
             admin_id = int(text)
             removed = db.remove_admin(admin_id)
-            message = f"**Success**: Admin {admin_id} removed." if removed else "**Error**: Admin not found or cannot be removed."
+            message = f"✅ <b>SUCCESS</b>: Admin {admin_id} removed." if removed else "❌ <b>ERROR</b>: Admin not found or cannot be removed."
             await update.message.reply_text(
                 message,
                 reply_markup=admin_keyboard(True),
-                parse_mode="Markdown",
+                parse_mode="HTML",
             )
         except ValueError:
-            await update.message.reply_text("**Error**: Please provide a valid numeric User ID.", parse_mode="Markdown")
+            await update.message.reply_text("<b>Error</b>: Please provide a valid numeric User ID.", parse_mode="HTML")
         finally:
             reset_user_state(context.user_data)
         return True
@@ -241,10 +242,10 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_BROADCAST_TEXT] = text
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
-            "**Step 2/3: CTA Button**\n\n"
+            "🔗 <b>STEP 2/3: CTA BUTTON</b>\n\n"
             "Format: Label | https://link.com\n"
-            "Send 'skip' if no button is needed.",
-            parse_mode="Markdown",
+            "Send skip if no button is needed.",
+            parse_mode="HTML",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
         return True
@@ -253,10 +254,10 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_BROADCAST_TEXT] = "" if text.lower() == "skip" else text
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
-            "**Step 2/3: CTA Button**\n\n"
+            "🔗 <b>STEP 2/3: CTA BUTTON</b>\n\n"
             "Format: Label | https://link.com\n"
-            "Send 'skip' if no button is needed.",
-            parse_mode="Markdown",
+            "Send skip if no button is needed.",
+            parse_mode="HTML",
             reply_markup=admin_keyboard(is_main_admin_user(user_id)),
         )
         return True
@@ -268,15 +269,15 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         else:
             if "|" not in text:
                 await update.message.reply_text(
-                    "**Error**: Use this format: Button Text | https://example.com\n\nOr send 'skip'.",
-                    parse_mode="Markdown",
+                    "<b>Error</b>: Use this format: Button Text | https://example.com\n\nOr send skip.",
+                    parse_mode="HTML",
                 )
                 return True
             button_text, button_url = [part.strip() for part in text.split("|", 1)]
             if not button_text or not button_url.startswith(("http://", "https://")):
                 await update.message.reply_text(
-                    "**Error**: Invalid button format. Use: Button Text | https://example.com",
-                    parse_mode="Markdown",
+                    "<b>Error</b>: Invalid format. Use: Button Text | https://example.com",
+                    parse_mode="HTML",
                 )
                 return True
             context.user_data[STATE_KEY_BROADCAST_BUTTON_TEXT] = button_text
@@ -285,9 +286,9 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CONFIRM
         await _send_broadcast_preview(update, context)
         await update.message.reply_text(
-            "**Step 3/3: Preview Ready**\n\n"
+            "✨ <b>STEP 3/3: PREVIEW READY</b>\n\n"
             "Review the post above. Select Publish to send to all users or Cancel to discard.",
-            parse_mode="Markdown",
+            parse_mode="HTML",
             reply_markup=broadcast_confirm_keyboard(),
         )
         return True
@@ -316,7 +317,7 @@ async def handle_admin_photo(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(
             f"📸 <b>PHOTO #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}</b> added.\n"
             "Send more files or tap Create Link.",
-            parse_mode="HTML",
+            parse_mode="HTML", # Already HTML
             reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
         )
         return True
@@ -332,17 +333,17 @@ async def handle_admin_photo(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if update.message.caption:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
-            "🔗 *STEP 2/3: CTA BUTTON*\n\n"
+            "🔗 <b>STEP 2/3: CTA BUTTON</b>\n\n"
             "Format: Label | https://link.com\n"
             "Send skip if no button is needed.",
-            parse_mode="Markdown",
+            parse_mode="HTML",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     else:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CAPTION
         await update.message.reply_text(
-            "📝 *STEP 2/3: CAPTION*\n\nSend a caption for this media or skip.",
-            parse_mode="Markdown",
+            "📝 <b>STEP 2/3: CAPTION</b>\n\nSend a caption for this media or skip.",
+            parse_mode="HTML",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     return True
@@ -366,7 +367,7 @@ async def handle_admin_video(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(
             f"🎬 <b>VIDEO #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}</b> added.\n"
             "Send more files or tap Create Link.",
-            parse_mode="HTML",
+            parse_mode="HTML", # Already HTML
             reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
         )
         return True
@@ -382,17 +383,17 @@ async def handle_admin_video(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if update.message.caption:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
-            "🔗 *STEP 2/3: CTA BUTTON*\n\n"
+            "🔗 <b>STEP 2/3: CTA BUTTON</b>\n\n"
             "Format: Label | https://link.com\n"
             "Send skip if no button is needed.",
-            parse_mode="Markdown",
+            parse_mode="HTML",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     else:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CAPTION
         await update.message.reply_text(
-            "📝 *STEP 2/3: CAPTION*\n\nSend a caption for this media or skip.",
-            parse_mode="Markdown",
+            "📝 <b>STEP 2/3: CAPTION</b>\n\nSend a caption for this media or skip.",
+            parse_mode="HTML",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     return True
@@ -416,7 +417,7 @@ async def handle_admin_document(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text(
             f"📄 <b>FILE #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}</b> added.\n"
             "Send more files or tap Create Link.",
-            parse_mode="HTML",
+            parse_mode="HTML", # Already HTML
             reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
         )
         return True
@@ -433,17 +434,17 @@ async def handle_admin_document(update: Update, context: ContextTypes.DEFAULT_TY
     if update.message.caption:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_BUTTON
         await update.message.reply_text(
-            "🔗 *STEP 2/3: CTA BUTTON*\n\n"
+            "🔗 <b>STEP 2/3: CTA BUTTON</b>\n\n"
             "Format: Label | https://link.com\n"
             "Send skip if no button is needed.",
-            parse_mode="Markdown",
+            parse_mode="HTML",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     else:
         context.user_data[STATE_KEY_ADMIN_STEP] = ADMIN_STEP_BROADCAST_CAPTION
         await update.message.reply_text(
-            "📝 *STEP 2/3: CAPTION*\n\nSend a caption for this media or skip.",
-            parse_mode="Markdown",
+            "📝 <b>STEP 2/3: CAPTION</b>\n\nSend a caption for this media or skip.",
+            parse_mode="HTML",
             reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id)),
         )
     return True
@@ -455,16 +456,17 @@ def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
 
     return (
-        "<b>💎 Administrative Console</b>\n\n"
-        f"👥 <b>Active Users:</b> {stats['total_users']} (<i>+{stats['new_users_today']} today</i>)\n"
-        f"🛠 <b>Operations:</b> {stats['total_jobs']}\n"
-        f"👤 <b>Staff:</b> {stats['total_admins']}\n\n"
-        "<b>System Health</b>\n"
-        f"• Backend: <code>{storage['backend']}</code>\n"
-        f"• Storage: <code>{storage['persistent']}</code>\n"
+        "⬛ <b>FILE FLEX BLACK</b>\n\n"
+        f"👥 Users: {stats['total_users']} (+{stats['new_users_today']} today)\n"
+        f"🛠 Total Jobs: {stats['total_jobs']} ({stats['jobs_today']} today)\n"
+        f"👤 Admins: {stats['total_admins']}\n\n"
+        "⬛ <b>INFRASTRUCTURE</b>\n"
+        f"• Backend: {storage['backend']}\n"
+        f"• Persistent: {storage['persistent']}\n"
         f"• Uptime: {uptime}\n"
-        "• API Status: Operational ✅\n\n"
-        "Select a management tool below."
+        f"• Storage Channel: {config.STORAGE_CHANNEL_ID}\n"
+        "• Status: Healthy 🟢\n\n"
+        "Use the controls below to manage the bot, publish broadcasts, and generate professional file share links."
     )
 
 
@@ -473,15 +475,15 @@ def _bot_status_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     storage = db.get_storage_details()
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
     return (
-        "⬛ *SYSTEM DIAGNOSTICS*\n\n"
+        "📊 <b>SYSTEM DIAGNOSTICS</b>\n\n"
         f"• Tracked Users: {stats['total_users']}\n"
         f"• Admin Staff: {stats['total_admins']}\n"
         f"• Job History: {stats['total_jobs']}\n\n"
-        "⬛ *STORAGE NODE*\n"
+        "⬛ <b>STORAGE NODE</b>\n"
         f"• Engine: {storage['backend']}\n"
         f"• Persistent: {storage['persistent']}\n"
         f"• Path: {storage['location']}\n\n"
-        "⬛ *RUNTIME*\n"
+        "⬛ <b>RUNTIME</b>\n"
         f"• Uptime: {uptime}\n"
         "• API Status: Operational ✅"
     )
@@ -492,7 +494,7 @@ def _admins_message() -> str:
     if not admins:
         return "ℹ️ No administrative accounts found."
 
-    lines = ["👥 *ADMINISTRATIVE TEAM*", ""]
+    lines = ["👥 <b>ADMINISTRATIVE TEAM</b>", ""]
     for admin in admins:
         label = admin["first_name"] or admin["username"] or str(admin["user_id"])
         role = "⭐ Main" if admin["is_main_admin"] else "👤 Admin"
@@ -554,7 +556,7 @@ async def _post_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     sent_count = 0
     failed_count = 0
 
-    await update.message.reply_text(f"🚀 Broadcast started for {len(user_ids)} users...", parse_mode="Markdown")
+    await update.message.reply_text(f"🚀 Broadcast started for {len(user_ids)} users...", parse_mode="HTML")
 
     for target_user_id in user_ids:
         try:
@@ -578,9 +580,9 @@ async def _post_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     reset_user_state(context.user_data)
     await update.message.reply_text(
-        f"✅ *BROADCAST COMPLETE*\n\n• Delivered: {sent_count}\n• Failed: {failed_count}",
+        f"✅ <b>BROADCAST COMPLETE</b>\n\n• Delivered: {sent_count}\n• Failed: {failed_count}",
         reply_markup=admin_keyboard(is_main_admin_user(update.effective_user.id if update.effective_user else None)),
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
 
 
@@ -646,7 +648,7 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
                 try:
                     await progress_message.edit_text(
                         f"⏳ <b>Uploading {i}/{len(files)} files...</b>\nPlease wait, do not send new commands.",
-                        parse_mode="HTML"
+                        parse_mode="HTML" # Already HTML
                     )
                 except Exception:
                     pass
@@ -697,7 +699,7 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
     with contextlib.suppress(Exception):
         await progress_message.delete()
     await update.message.reply_text(
-        f"<b>⬛ SHARE LINK GENERATED</b>\n\n"
+        f"⬛ <b>SHARE LINK GENERATED</b>\n\n"
         f"📁 Files: {total_files}\n"
         f"🔗 Link: <a href='{share_link}'>Open in Bot</a>\n\n"
         f"<code>{share_link}</code>\n\n"
@@ -709,7 +711,7 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
 
 async def _stores_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     return (
-        "⬛ *SHARING GUIDE*\n\n"
+        "⬛ <b>SHARING GUIDE</b>\n\n"
         "Files are stored securely in your dedicated Telegram channel, ensuring links remain permanent across bot updates.\n\n"
         "💡 Save your generated links; the bot does not currently keep a searchable index of old share URLs."
     )

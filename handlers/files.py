@@ -122,7 +122,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     action = context.user_data.get(STATE_KEY_ACTION)
     if action not in {ACTION_COMPRESS_IMAGE, ACTION_CONVERT_FILE}:
         await update.message.reply_text(
-            "💡 *Tip*: Choose a tool from the main menu before sending an image.",
+            "💡 Choose a tool from the main menu before sending an image.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -139,7 +139,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         logger.exception("Failed to process photo")
         reset_user_state(context.user_data)
         await update.message.reply_text(
-            "❌ *Processing Error*: I couldn't handle that image. Please try a different file.",
+            "❌ PROCESSING ERROR: I couldn't handle that image.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -160,7 +160,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     action = context.user_data.get(STATE_KEY_ACTION)
     if not action:
         await update.message.reply_text(
-            "💡 *Tip*: Select a tool from the menu before uploading a document.",
+            "💡 Select a tool from the menu before uploading a document.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -180,7 +180,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             context.user_data[STATE_KEY_PENDING_FILE] = str(input_path)
             context.user_data[STATE_KEY_PENDING_EXTENSION] = Path(file_name).suffix
             await update.message.reply_text(
-                "📥 *File Received*: Now send the new name (including extension).",
+                "📥 FILE RECEIVED: Send the new name (including extension).",
                 reply_markup=home_keyboard(),
                 parse_mode="Markdown"
             )
@@ -192,8 +192,8 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             pending_files = context.user_data.setdefault(STATE_KEY_PENDING_FILES, [])
             pending_files.append(str(input_path))
             await update.message.reply_text(
-                f"📑 *Added to Queue*: {len(pending_files)} files ready.\n"
-                "Send more or tap *Finish Merge*.",
+                f"📑 ADDED TO QUEUE: {len(pending_files)} files ready.\n"
+                "Send more or tap Finish Merge.",
                 reply_markup=merge_keyboard(),
                 parse_mode="Markdown"
             )
@@ -203,7 +203,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             context.user_data[STATE_KEY_PENDING_FILE] = str(input_path)
             context.user_data[STATE_KEY_PENDING_INPUT] = "range"
             await update.message.reply_text(
-                "📥 *PDF Received*: Send the page range to extract (e.g., `1-5`).",
+                "📥 PDF RECEIVED: Send the page range to extract (e.g., 1-5).",
                 reply_markup=home_keyboard(),
                 parse_mode="Markdown",
             )
@@ -221,7 +221,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         logger.exception("Failed to process document")
         reset_user_state(context.user_data)
         await update.message.reply_text(
-            "❌ *Critical Error*: Something went wrong. Let's start fresh from the main menu.",
+            "❌ CRITICAL ERROR: Something went wrong. Start fresh from the main menu.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -243,12 +243,12 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     if text == BTN_HOME:
         reset_user_state(context.user_data)
-        await update.message.reply_text("🏠 *Main Menu*", reply_markup=home_keyboard(), parse_mode="Markdown")
+        await update.message.reply_text("🏠 MAIN MENU", reply_markup=home_keyboard(), parse_mode="Markdown")
         return
 
     if text == BTN_HELP:
         reset_user_state(context.user_data)
-        await update.message.reply_text(HELP_MESSAGE, reply_markup=home_keyboard(), parse_mode="Markdown")
+        await update.message.reply_text(HELP_MESSAGE, reply_markup=home_keyboard())
         return
 
     if text == BTN_CONVERT_FILES:
@@ -285,9 +285,9 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_EXTRACT_ZIP
         await update.message.reply_text(
-            "📦 *Archive Extraction*\n\n"
+            "📦 *ARCHIVE EXTRACTION*\n\n"
             "Upload a ZIP archive and I'll extract its contents for you.\n\n"
-            f"▫️ *Limit:* {_size_label(config.ZIP_MAX_FILE_SIZE)}",
+            f"▫️ Limit: {_size_label(config.ZIP_MAX_FILE_SIZE)}",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -297,9 +297,9 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_COMPRESS_IMAGE
         await update.message.reply_text(
-            "🖼 *Image Compression*\n\n"
+            "🖼 *IMAGE COMPRESSION*\n\n"
             "Send an image and I'll optimize it for smaller size while maintaining quality.\n\n"
-            f"▫️ *Limit:* {_size_label(config.MAX_FILE_SIZE)}",
+            f"▫️ Limit: {_size_label(config.MAX_FILE_SIZE)}",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -309,9 +309,9 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_RENAME_FILE
         await update.message.reply_text(
-            "📝 *Rename Tool*\n\n"
+            "📝 *RENAME TOOL*\n\n"
             "Upload any file first, then send the new name you'd like to assign.\n\n"
-            f"▫️ *Limit:* {_size_label(config.MAX_FILE_SIZE)}",
+            f"▫️ Limit: {_size_label(config.MAX_FILE_SIZE)}",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -322,9 +322,9 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         context.user_data[STATE_KEY_ACTION] = ACTION_MERGE_PDF
         context.user_data[STATE_KEY_PENDING_FILES] = []
         await update.message.reply_text(
-            "🧩 *PDF Merger*\n\n"
-            "Upload PDF files in the order you want them combined. Tap *Finish Merge* when ready.\n\n"
-            f"▫️ *Per-file Limit:* {_size_label(config.MAX_FILE_SIZE)}",
+            "🧩 *PDF MERGER*\n\n"
+            "Upload PDF files in order. Tap Finish Merge when ready.\n\n"
+            f"▫️ Limit: {_size_label(config.MAX_FILE_SIZE)}",
             reply_markup=merge_keyboard(),
             parse_mode="Markdown"
         )
@@ -334,9 +334,9 @@ async def handle_text_input(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_SPLIT_PDF
         await update.message.reply_text(
-            "✂️ *PDF Splitter*\n\n"
+            "✂️ *PDF SPLITTER*\n\n"
             "Upload a PDF, and then specify which pages you'd like to extract.\n\n"
-            f"▫️ *Limit:* {_size_label(config.MAX_FILE_SIZE)}",
+            f"▫️ Limit: {_size_label(config.MAX_FILE_SIZE)}",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -371,7 +371,7 @@ async def unknown_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         return
     if update.message:
         await update.message.reply_text(
-            "❓ *Unknown Request*: Please select a valid tool from the menu.",
+            "❓ UNKNOWN REQUEST: Please select a valid tool from the menu.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -390,7 +390,7 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     await update.message.reply_text(
-        "🎬 *Video Mode*: Direct video uploads are currently restricted to Admin Broadcasts.",
+        "🎬 VIDEO MODE: Direct video uploads are restricted to Admin Broadcasts.",
         reply_markup=home_keyboard(),
         parse_mode="Markdown"
     )
@@ -421,7 +421,7 @@ async def _process_file_action(update: Update, context: ContextTypes.DEFAULT_TYP
                         document=InputFile(file_handle, filename=file_path.name)
                     )
 
-            await update.message.reply_text("✅ *Extraction Complete!* Your files are ready.", reply_markup=home_keyboard(), parse_mode="Markdown")
+            await update.message.reply_text("✅ EXTRACTION COMPLETE: Your files are ready.", reply_markup=home_keyboard(), parse_mode="Markdown")
             reset_user_state(context.user_data)
             return
 
@@ -495,7 +495,7 @@ async def _finish_rename(update: Update, context: ContextTypes.DEFAULT_TYPE, tex
         logger.exception("Failed to finish rename")
         reset_user_state(context.user_data)
         await update.message.reply_text(
-            "❌ *Rename Failed*: Ensure the name is valid and try again.",
+            "❌ RENAME FAILED: Ensure the name is valid and try again.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -521,7 +521,7 @@ async def _finish_split(update: Update, context: ContextTypes.DEFAULT_TYPE, text
         if start_page < 1 or end_page < start_page:
             raise ValueError("That page range isn't valid.")
 
-        wait_message, wait_task = await _start_wait_animation(update, "✂️ Splitting PDF")
+        wait_message, wait_task = await _start_wait_animation(update, "Splitting PDF")
         split_path = split_pdf(source_path, start_page, end_page)
         with split_path.open("rb") as file_handle:
             await update.message.reply_document(
@@ -575,7 +575,7 @@ async def _start_wait_animation(update: Update, title: str):
     if not update.message:
         return None, None
 
-    wait_message = await update.message.reply_text(f"⚙️ *{title}*\n`{WAIT_ANIMATION_FRAMES[0]}`", parse_mode="Markdown")
+    wait_message = await update.message.reply_text(f"⚙️ {title}\n`{WAIT_ANIMATION_FRAMES[0]}`", parse_mode="Markdown")
     wait_task = asyncio.create_task(_animate_wait_message(wait_message, title))
     return wait_message, wait_task
 
@@ -596,7 +596,7 @@ async def _animate_wait_message(wait_message, title: str) -> None:
     while True:
         await asyncio.sleep(0.8)
         with suppress(Exception):
-            await wait_message.edit_text(f"⚙️ *{title}*\n`{WAIT_ANIMATION_FRAMES[frame_index]}`", parse_mode="Markdown")
+            await wait_message.edit_text(f"⚙️ {title}\n`{WAIT_ANIMATION_FRAMES[frame_index]}`", parse_mode="Markdown")
         frame_index = (frame_index + 1) % len(WAIT_ANIMATION_FRAMES)
 
 
@@ -659,21 +659,21 @@ def _validate_conversion_input(input_path: Path, conversion_target: str) -> None
 
 def _conversion_prompt(conversion_target: str) -> str:
     prompts = {
-        "jpg_to_pdf": "🖼 ➔ 📄 Upload your JPG to convert it to PDF.",
-        "word_to_pdf": "📝 ➔ 📄 Send your Word document for PDF conversion.",
-        "powerpoint_to_pdf": "📊 ➔ 📄 Send your PowerPoint to export as PDF.",
-        "excel_to_pdf": "📈 ➔ 📄 Upload your Excel sheet to turn it into a PDF.",
-        "html_to_pdf": "🌐 ➔ 📄 Send an HTML file to render it as PDF.",
-        "pdf_to_jpg": "📄 ➔ 🖼 Upload a PDF to extract its pages as images.",
-        "pdf_to_word": "📄 ➔ 📝 Convert your PDF into an editable Word doc.",
-        "pdf_to_powerpoint": "📄 ➔ 📊 Turn your PDF pages into a PowerPoint deck.",
-        "pdf_to_excel": "📄 ➔ 📈 Extract data from your PDF into an Excel sheet.",
-        "pdf_to_pdfa": "🛡 Convert your PDF into the archival PDF/A format.",
-        "jpg_to_png": "🖼 Convert your JPG image to a PNG file.",
-        "png_to_jpg": "🖼 Convert your PNG image to a JPG file.",
+        "jpg_to_pdf": "🖼 JPG to PDF: Upload your image.",
+        "word_to_pdf": "📝 Word to PDF: Send your doc/docx file.",
+        "powerpoint_to_pdf": "📊 PPT to PDF: Send your ppt/pptx file.",
+        "excel_to_pdf": "📈 Excel to PDF: Send your xls/xlsx file.",
+        "html_to_pdf": "🌐 HTML to PDF: Send your html file.",
+        "pdf_to_jpg": "📄 PDF to JPG: Send PDF for extraction.",
+        "pdf_to_word": "📄 PDF to Word: Convert to editable doc.",
+        "pdf_to_powerpoint": "📄 PDF to PPT: Turn PDF into presentation.",
+        "pdf_to_excel": "📄 PDF to Excel: Extract tables to sheet.",
+        "pdf_to_pdfa": "🛡 PDF/A: Convert to archival standard.",
+        "jpg_to_png": "🖼 JPG to PNG: Upload your image.",
+        "png_to_jpg": "🖼 PNG to JPG: Upload your image.",
     }
     base_prompt = prompts.get(conversion_target, "Please upload the file you wish to convert.")
-    return f"{base_prompt}\n\n▫️ *Limit:* {_size_label(config.MAX_FILE_SIZE)}"
+    return f"{base_prompt}\n\n▫️ Limit: {_size_label(config.MAX_FILE_SIZE)}"
 
 
 def _available_conversion_buttons() -> list[str]:
@@ -686,13 +686,13 @@ def _available_conversion_buttons() -> list[str]:
 
 def _available_conversions_message() -> str:
     lines = [
-        "🔄 *Conversion Studio*",
+        "🔄 *CONVERSION STUDIO*",
         "",
         "Select your desired conversion workflow:",
         "",
-        "🔹 *To PDF:* JPG, Word, PPT, Excel, HTML",
-        "🔹 *From PDF:* JPG, Word, PPT, Excel, PDF/A",
-        "Image formats: JPG to PNG, PNG to JPG",
+        "🔹 To PDF: JPG, Word, PPT, Excel, HTML",
+        "🔹 From PDF: JPG, Word, PPT, Excel, PDF/A",
+        "Image formats: JPG/PNG swap",
     ]
 
     if not is_libreoffice_available():
@@ -706,7 +706,7 @@ def _available_conversions_message() -> str:
     if not is_ghostscript_available():
         lines.append("⚠️ *Note:* PDF/A conversion is currently offline.")
 
-    lines.extend(["", "Select a tool below or tap *Home* to exit."])
+    lines.extend(["", "Select a tool below or tap Home to exit."])
 
     return "\n".join(lines)
 
@@ -714,14 +714,14 @@ def _available_conversions_message() -> str:
 def _conversion_unavailable_message(conversion_target: str) -> str:
     if conversion_target in {"word_to_pdf", "powerpoint_to_pdf", "excel_to_pdf", "html_to_pdf"}:
         return (
-            "❌ *Service Offline*\n\n"
+            "❌ SERVICE OFFLINE\n\n"
             "Office conversions require LibreOffice, which is not available on this server node."
         )
 
     if conversion_target == "pdf_to_pdfa":
         return (
-            "❌ *Service Offline*\n\n"
+            "❌ SERVICE OFFLINE\n\n"
             "PDF/A conversion requires Ghostscript, which is not currently installed."
         )
 
-    return "❌ This conversion is currently unavailable."
+    return "❌ THIS CONVERSION IS CURRENTLY UNAVAILABLE."

@@ -1,14 +1,17 @@
 from telegram import KeyboardButton, ReplyKeyboardMarkup
 
 
-BTN_EXTRACT_ZIP = "Extract Archive"
-BTN_COMPRESS_IMAGE = "Compress Image"
-BTN_CONVERT_FILES = "Convert Files"
-BTN_RENAME_FILE = "Rename File"
-BTN_MERGE_PDF = "PDF Merge"
-BTN_SPLIT_PDF = "PDF Split"
-BTN_HELP = "Support"
-BTN_HOME = "Home"
+# --- Home Menu (Geometric Style) ---
+BTN_CONVERT_FILES = "◈ Convert Files"
+BTN_COMPRESS_IMAGE = "⬢ Compress Image"
+BTN_EXTRACT_ZIP = "▣ Extract Archive"
+BTN_RENAME_FILE = "▩ Rename File"
+BTN_MERGE_PDF = "▦ PDF Merge"
+BTN_SPLIT_PDF = "▤ PDF Split"
+BTN_HELP = "○ Support"
+BTN_HOME = "⬛ Home"
+
+# --- Functional & Admin (Professional Text) ---
 BTN_DONE = "Finish Merge"
 BTN_ADMIN_DASHBOARD = "Dashboard"
 BTN_ADMIN_STATUS = "Status"

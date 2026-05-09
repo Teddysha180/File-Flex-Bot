@@ -39,11 +39,11 @@ async def ensure_channel_membership(update: Update, context: ContextTypes.DEFAUL
         ]
     )
     await message.reply_text(
-        "⬛ *SECURITY VERIFICATION*\n\n"
-        "To unlock the full potential of FILE FLEX BLACK, please join our update channel.\n\n"
+        "<b>SECURITY VERIFICATION</b>\n\n"
+        "To unlock the full potential of FILEFLEX CLOUD, please join our update channel.\n\n"
         "After joining, tap Check Access to activate your workspace.",
         reply_markup=join_keyboard,
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
     return False
 
@@ -56,15 +56,15 @@ async def handle_join_check_callback(update: Update, context: ContextTypes.DEFAU
     if await is_channel_member(update, context):
         await query.answer("✅ Access Granted.")
         await query.edit_message_text(
-            "🔓 *VERIFICATION SUCCESSFUL*\n\nYour File Flex workspace is now active.",
-            parse_mode="Markdown"
+            "<b>VERIFICATION SUCCESSFUL</b>\n\nYour FileFlex Cloud workspace is now active.",
+            parse_mode="HTML"
         )
         await context.bot.send_message(
             chat_id=query.message.chat_id,
             text="Select a tool from the menu to begin your first task.",
             reply_markup=home_keyboard(),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return
 
-    await query.answer("⚠️ MEMBERSHIP NOT FOUND. Please join the channel and try again.", show_alert=True)
+    await query.answer("⚠️ Membership not found. Please join the channel and try again.", show_alert=True)

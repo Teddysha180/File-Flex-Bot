@@ -455,17 +455,16 @@ def _dashboard_message(context: ContextTypes.DEFAULT_TYPE) -> str:
     uptime = _format_uptime(context.application.bot_data.get("started_at"))
 
     return (
-        "⬛ *FILE FLEX BLACK*\n\n"
-        f"👥 Users: {stats['total_users']} (+{stats['new_users_today']} today)\n"
-        f"🛠 Total Jobs: {stats['total_jobs']} ({stats['jobs_today']} today)\n"
-        f"👤 Admins: {stats['total_admins']}\n\n"
-        "⬛ *INFRASTRUCTURE*\n"
-        f"• Backend: {storage['backend']}\n"
-        f"• Persistent: {storage['persistent']}\n"
+        "<b>💎 Administrative Console</b>\n\n"
+        f"👥 <b>Active Users:</b> {stats['total_users']} (<i>+{stats['new_users_today']} today</i>)\n"
+        f"🛠 <b>Operations:</b> {stats['total_jobs']}\n"
+        f"👤 <b>Staff:</b> {stats['total_admins']}\n\n"
+        "<b>System Health</b>\n"
+        f"• Backend: <code>{storage['backend']}</code>\n"
+        f"• Storage: <code>{storage['persistent']}</code>\n"
         f"• Uptime: {uptime}\n"
-        f"• Storage Channel: {config.STORAGE_CHANNEL_ID}\n"
-        "• Status: Healthy 🟢\n\n"
-        "Use the controls below to manage the bot, publish broadcasts, and generate professional file share links."
+        "• API Status: Operational ✅\n\n"
+        "Select a management tool below."
     )
 
 

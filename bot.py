@@ -83,7 +83,8 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
     if isinstance(update, Update) and update.effective_message:
         await update.effective_message.reply_text(
-            "Something unexpected happened while processing your request. Please try again with /start."
+            "<b>Error</b>: An unexpected issue occurred. Please try again with /start.",
+            parse_mode="HTML"
         )
 
 

@@ -1,42 +1,42 @@
-from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 
 
 # --- Home Menu ---
-BTN_CONVERT_FILES = "Convert Files"
-BTN_COMPRESS_IMAGE = "Compress Image"
-BTN_EXTRACT_ZIP = "Extract Archive"
-BTN_RENAME_FILE = "Rename File"
-BTN_MERGE_PDF = "PDF Merge"
-BTN_SPLIT_PDF = "PDF Split"
-BTN_HELP = "Support"
-BTN_HOME = "Home"
+BTN_CONVERT_FILES = "🔄 Conversion"
+BTN_COMPRESS_IMAGE = "🖼 Image Tools"
+BTN_EXTRACT_ZIP = "📦 Archives"
+BTN_RENAME_FILE = "📝 Rename"
+BTN_MERGE_PDF = "📄 Merge PDF"
+BTN_SPLIT_PDF = "✂️ Split PDF"
+BTN_HELP = "ℹ️ Info & Support"
+BTN_HOME = "🏠 Main Menu"
 
 # --- Functional & Admin ---
-BTN_DONE = "Finish Merge"
-BTN_ADMIN_DASHBOARD = "Dashboard"
-BTN_ADMIN_STATUS = "System Status"
-BTN_ADMIN_ADMINS = "Administrators"
-BTN_ADMIN_BROADCAST = "Broadcast"
-BTN_ADMIN_CREATE_STORE = "New Share Link"
-BTN_ADMIN_FINISH_STORE = "Create Link"
-BTN_ADMIN_STORES = "Share Guide"
-BTN_ADMIN_POST = "Publish Broadcast"
-BTN_ADMIN_ADD_ADMIN = "Add Admin"
-BTN_ADMIN_REMOVE_ADMIN = "Remove Admin"
-BTN_ADMIN_CANCEL = "Cancel"
+BTN_DONE = "✅ Finalize"
+BTN_ADMIN_DASHBOARD = "📊 Analytics"
+BTN_ADMIN_STATUS = "⚙️ Node Status"
+BTN_ADMIN_ADMINS = "👥 Team"
+BTN_ADMIN_BROADCAST = "📢 Broadcast"
+BTN_ADMIN_CREATE_STORE = "🔗 New Share"
+BTN_ADMIN_FINISH_STORE = "✨ Generate Link"
+BTN_ADMIN_STORES = "📖 Guide"
+BTN_ADMIN_POST = "🚀 Deploy"
+BTN_ADMIN_ADD_ADMIN = "➕ Add Member"
+BTN_ADMIN_REMOVE_ADMIN = "❌ Remove"
+BTN_ADMIN_CANCEL = "🔙 Cancel"
 
-BTN_JPG_TO_PDF = "JPG to PDF"
-BTN_WORD_TO_PDF = "Word to PDF"
-BTN_POWERPOINT_TO_PDF = "Slides to PDF"
-BTN_EXCEL_TO_PDF = "Sheet to PDF"
-BTN_HTML_TO_PDF = "HTML to PDF"
-BTN_PDF_TO_JPG = "PDF to JPG"
-BTN_PDF_TO_WORD = "PDF to Word"
-BTN_PDF_TO_POWERPOINT = "PDF to Slides"
-BTN_PDF_TO_EXCEL = "PDF to Sheet"
-BTN_PDF_TO_PDFA = "PDF to PDF/A"
-BTN_JPG_TO_PNG = "JPG to PNG"
-BTN_PNG_TO_JPG = "PNG to JPG"
+BTN_JPG_TO_PDF = "🖼 → 📄 PDF"
+BTN_WORD_TO_PDF = "📝 → 📄 PDF"
+BTN_POWERPOINT_TO_PDF = "📊 → 📄 PDF"
+BTN_EXCEL_TO_PDF = "📈 → 📄 PDF"
+BTN_HTML_TO_PDF = "🌐 → 📄 PDF"
+BTN_PDF_TO_JPG = "📄 → 🖼 JPG"
+BTN_PDF_TO_WORD = "📄 → 📝 Word"
+BTN_PDF_TO_POWERPOINT = "📄 → 📊 PPT"
+BTN_PDF_TO_EXCEL = "📄 → 📈 Excel"
+BTN_PDF_TO_PDFA = "🛡 PDF/A"
+BTN_JPG_TO_PNG = "JPG ↔ PNG"
+BTN_PNG_TO_JPG = "PNG ↔ JPG"
 
 
 def home_keyboard() -> ReplyKeyboardMarkup:
@@ -49,7 +49,17 @@ def home_keyboard() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
         is_persistent=True,
-        input_field_placeholder="Choose a tool",
+        input_field_placeholder="Select a module...",
+    )
+
+
+def settings_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("📊 My Stats", callback_data="menu:stats"), InlineKeyboardButton("🕒 History", callback_data="menu:history")],
+            [InlineKeyboardButton("💬 Live Support", url="https://t.me/your_support_handle")],
+            [InlineKeyboardButton("🏠 Return home", callback_data="menu:home")]
+        ]
     )
 
 

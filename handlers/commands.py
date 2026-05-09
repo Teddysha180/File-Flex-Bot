@@ -22,12 +22,12 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
     if update.message:
         intro_message = await update.message.reply_text(
-            INTRO_ANIMATION_FRAMES[0],
-            parse_mode="Markdown",
+            INTRO_ANIMATION_FRAMES[0], # This is plain text, so Markdown is fine.
+            parse_mode="Markdown", # No change
         )
         for frame in INTRO_ANIMATION_FRAMES[1:]:
             await asyncio.sleep(0.35)
-            await intro_message.edit_text(frame, parse_mode="Markdown")
+            await intro_message.edit_text(frame, parse_mode="Markdown") # No change
 
         await asyncio.sleep(0.25)
         await update.message.reply_text(WELCOME_MESSAGE, reply_markup=home_keyboard())
@@ -38,7 +38,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     if not await ensure_channel_membership(update, context):
         return
     if update.message:
-        await update.message.reply_text(HELP_MESSAGE, reply_markup=home_keyboard())
+        await update.message.reply_text(HELP_MESSAGE, reply_markup=home_keyboard(), parse_mode="HTML") # Ensure HTML parsing for HELP_MESSAGE
 
 
 async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
@@ -48,13 +48,13 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
     payload = context.args[0].strip()
     if not payload.startswith("store_"):
         return False
-
+    
     payload_parts = payload.split("_")
     if len(payload_parts) != 3:
         await update.message.reply_text(
-            "**Error**: This link is invalid or has expired.",
+            "<b>Error</b>: This link is invalid or has expired.",
             reply_markup=home_keyboard(),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
@@ -63,24 +63,24 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
         end_message_id = int(payload_parts[2])
     except ValueError:
         await update.message.reply_text(
-            "**Error**: This link is invalid or has expired.",
+            "<b>Error</b>: This link is invalid or has expired.",
             reply_markup=home_keyboard(),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
     if start_message_id <= 0 or end_message_id < start_message_id:
         await update.message.reply_text(
-            "**Error**: This link is invalid or has expired.",
+            "<b>Error</b>: This link is invalid or has expired.",
             reply_markup=home_keyboard(),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
     preparing_message = await update.message.reply_text(
         f"Retrieving {end_message_id - start_message_id + 1} files...",
         reply_markup=home_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
     _schedule_message_deletion(context, update.effective_chat.id, preparing_message.message_id)
 
@@ -99,17 +99,17 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
 
     if not sent_message_ids:
         await update.message.reply_text(
-            "**Error**: Unable to retrieve files. They may have been removed.",
+            "<b>Error</b>: Unable to retrieve files. They may have been removed.",
             reply_markup=home_keyboard(),
-            parse_mode="Markdown"
+            parse_mode="HTML"
         )
         return True
 
     warning_message = await update.message.reply_text(
-        "**Privacy Notice**\n\n"
+        "<b>Privacy Notice</b>\n\n"
         "These files will be automatically deleted from this chat in 5 minutes.\n\n"
         "Please forward them to your Saved Messages if you need to keep them.",
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
     sent_message_ids.append(warning_message.message_id)
 

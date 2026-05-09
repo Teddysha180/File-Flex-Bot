@@ -53,7 +53,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
     if data == "menu:home":
         reset_user_state(context.user_data)
         await query.edit_message_text(
-            "⬛ *FILE FLEX BLACK*\n\nSelect a tool suite below to get started.",
+            "**FILEFLEX CLOUD**\n\nSelect a tool suite below to get started.",
             reply_markup=main_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -61,7 +61,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
 
     if data == "menu:category:archives":
         await query.edit_message_text(
-            "📦 *ARCHIVE SOLUTIONS*\n\nExtract content from ZIP files or bundle multiple files into a single archive.",
+            "**ARCHIVE MANAGEMENT**\n\nExtract content from ZIP files or bundle multiple files into a single archive.",
             reply_markup=archives_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -69,7 +69,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
 
     if data == "menu:category:images":
         await query.edit_message_text(
-            "🖼 *IMAGE SUITE*\n\nOptimize, resize, watermark, or extract text from your images.",
+            "**IMAGE TOOLS**\n\nOptimize, resize, watermark, or extract text from your images.",
             reply_markup=image_tools_keyboard(),
             parse_mode="Markdown"
         )
@@ -77,7 +77,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
 
     if data == "menu:category:documents":
         await query.edit_message_text(
-            "📄 *DOCUMENT LAB*\n\nAdvanced PDF management: merge, split, rename, or file conversion.",
+            "**DOCUMENT PROCESSING**\n\nAdvanced PDF management: merge, split, rename, or file conversion.",
             reply_markup=documents_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -85,7 +85,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
 
     if data == "menu:category:video":
         await query.edit_message_text(
-            "🎬 *VIDEO WORKSHOP*\n\nOptimize clips for sharing or convert them into GIFs.",
+            "**VIDEO TOOLS**\n\nOptimize clips for sharing or convert them into GIFs.",
             reply_markup=video_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -96,26 +96,26 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
             stats = db.get_user_stats(update.effective_user.id)
             if stats:
                 stats_text = (
-                    "<b>📊 PERFORMANCE PROFILE</b>\n\n"
-                    f"📂 Processed: {stats['total_files']} files\n"
-                    f"💾 Saved: {stats['storage_saved'] / (1024*1024):.1f} MB\n"
-                    f"📈 Active: {stats['files_this_week']} this week\n"
-                    f"📅 Joined: {stats['member_since']}\n\n"
-                    "Efficiency level: Optimal"
+                    "**USER ANALYTICS**\n\n"
+                    f"• Processed: {stats['total_files']} files\n"
+                    f"• Savings: {stats['storage_saved'] / (1024*1024):.1f} MB\n"
+                    f"• Activity: {stats['files_this_week']} this week\n"
+                    f"• Member since: {stats['member_since']}\n\n"
+                    "Status: Optimal"
                 )
             else:
-                stats_text = "📊 No activity recorded yet. Send your first file to start tracking efficiency."
+                stats_text = "**Analytics**: No activity recorded yet. Process your first file to see statistics."
             
             await query.edit_message_text(
                 stats_text,
                 reply_markup=settings_keyboard(),
-                parse_mode="HTML"
+                parse_mode="Markdown"
             )
         return
 
     if data == "menu:settings":
         await query.edit_message_text(
-            "⚙️ *PREFERENCES & INFO*\n\nAccess statistics, activity logs, and technical guidance.",
+            "**SETTINGS & INFORMATION**\n\nAccess statistics, activity logs, and technical guidance.",
             reply_markup=settings_keyboard(),
             parse_mode="Markdown"
         )
@@ -134,19 +134,19 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         if update.effective_user:
             history = db.get_processing_history(update.effective_user.id, limit=5)
             if history:
-                history_text = "<b>📋 RECENT OPERATIONS</b>\n\n"
+                history_text = "**RECENT ACTIVITY**\n\n"
                 for idx, record in enumerate(history, 1):
                     action, input_file, output_file, in_size, out_size, proc_time, timestamp = record
                     history_text += f"{idx}. {action.upper()}\n"
-                    history_text += f"   ▫️ {input_file[:25]}\n"
-                    history_text += f"   ▫️ {proc_time:.1f}s processing\n\n"
+                    history_text += f"   • {input_file[:25]}\n"
+                    history_text += f"   • {proc_time:.1f}s processing\n\n"
             else:
-                history_text = "📋 No recent activity found."
+                history_text = "No recent activity found."
             
             await query.edit_message_text(
                 history_text,
                 reply_markup=settings_keyboard(),
-                parse_mode="HTML"
+                parse_mode="Markdown"
             )
         return
 
@@ -154,7 +154,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_EXTRACT_ZIP
         await query.edit_message_text(
-            "📦 *READY*: Upload a .zip file to begin extraction.",
+            "**Ready**: Please upload a ZIP file to begin extraction.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown",
         )
@@ -165,7 +165,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         context.user_data[STATE_KEY_ACTION] = ACTION_CREATE_ZIP
         context.user_data[STATE_KEY_PENDING_FILES] = []
         await query.edit_message_text(
-            "🗃️ *READY*: Upload files to archive. Tap Finish when the queue is complete.",
+            "**Ready**: Upload files to archive. Select Finish when the queue is complete.",
             reply_markup=queue_actions_keyboard(),
             parse_mode="Markdown"
         )
@@ -175,7 +175,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_COMPRESS_IMAGE
         await query.edit_message_text(
-            "🗜️ *READY*: Upload an image for size optimization.",
+            "**Ready**: Please upload an image for optimization.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -186,7 +186,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         context.user_data[STATE_KEY_ACTION] = ACTION_RESIZE_IMAGE
         context.user_data[STATE_KEY_PENDING_INPUT] = "width"
         await query.edit_message_text(
-            "📐 *READY*: Upload an image to resize it to 800x600 profile.",
+            "**Ready**: Upload an image to resize (default: 800x600).",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -196,7 +196,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_ENHANCE_IMAGE
         await query.edit_message_text(
-            "✨ *READY*: Upload an image to apply enhancements.",
+            "**Ready**: Please upload an image to apply enhancements.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -206,7 +206,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_WATERMARK_IMAGE
         await query.edit_message_text(
-            "💧 *READY*: Upload an image to apply the watermark.",
+            "**Ready**: Please upload an image to apply watermark.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -216,7 +216,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_OCR_IMAGE
         await query.edit_message_text(
-            "🔤 *READY*: Upload an image to perform text extraction.",
+            "**Ready**: Please upload an image for text extraction.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -226,7 +226,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
         await query.edit_message_text(
-            "🔄 *WORKFLOW SELECTOR*\n\nSelect a file conversion path below.",
+            "**CONVERSION TOOLS**\n\nSelect a conversion path below.",
             reply_markup=conversion_keyboard(),
             parse_mode="Markdown"
         )
@@ -236,7 +236,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
         await query.edit_message_text(
-            "📄 *DESTINATION: PDF*\n\nInputs: Images, Word, PPT, Excel, and HTML.",
+            "**CONVERT TO PDF**\n\nSupported inputs: Images, Word, PPT, Excel, and HTML.",
             reply_markup=convert_to_pdf_keyboard(),
             parse_mode="Markdown"
         )
@@ -246,7 +246,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
         await query.edit_message_text(
-            "📤 *SOURCE: PDF*\n\nConvert PDF into Images, Word, PPT, or Excel.",
+            "**CONVERT FROM PDF**\n\nConvert PDF into Images, Word, PPT, or Excel.",
             reply_markup=convert_from_pdf_keyboard(),
             parse_mode="Markdown"
         )
@@ -256,7 +256,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_CONVERT_FILE
         await query.edit_message_text(
-            "🖼 *FORMAT SWITCHER*\n\nConvert between common image formats.",
+            "**IMAGE CONVERSION**\n\nSwitch between standard image formats.",
             reply_markup=image_format_conversion_keyboard(),
             parse_mode="Markdown"
         )
@@ -267,7 +267,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         context.user_data[STATE_KEY_ACTION] = ACTION_MERGE_PDF
         context.user_data[STATE_KEY_PENDING_FILES] = []
         await query.edit_message_text(
-            "🧩 *READY*: Upload PDF files in sequence. Tap Finish to compile the final document.",
+            "**Ready**: Upload PDF files in sequence. Select Finish to merge.",
             reply_markup=queue_actions_keyboard(),
             parse_mode="Markdown"
         )
@@ -278,7 +278,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         context.user_data[STATE_KEY_ACTION] = ACTION_SPLIT_PDF
         context.user_data[STATE_KEY_PENDING_INPUT] = "file"
         await query.edit_message_text(
-            "✂️ *READY*: Upload a PDF file to begin page extraction.",
+            "**Ready**: Please upload a PDF file for splitting.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -288,7 +288,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_RENAME_FILE
         await query.edit_message_text(
-            "📝 *READY*: Upload the file you wish to rename.",
+            "**Ready**: Please upload the file you wish to rename.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -298,7 +298,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         reset_user_state(context.user_data)
         context.user_data[STATE_KEY_ACTION] = ACTION_VIDEO_TO_GIF
         await query.edit_message_text(
-            "🎬 *READY*: Upload a video clip to convert it into a GIF.",
+            "**Ready**: Please upload a video clip to convert to GIF.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -309,7 +309,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         context.user_data[STATE_KEY_ACTION] = ACTION_COMPRESS_VIDEO
         context.user_data[STATE_KEY_PENDING_INPUT] = "quality"
         await query.edit_message_text(
-            "🎥 *READY*: Upload a video file for bitrate optimization.",
+            "**Ready**: Please upload a video for optimization.",
             reply_markup=back_to_menu_keyboard(),
             parse_mode="Markdown"
         )
@@ -346,22 +346,24 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         pending_files = context.user_data.get(STATE_KEY_PENDING_FILES, [])
         if not pending_files:
             await query.edit_message_text(
-                "⚠️ QUEUE EMPTY: Please upload at least one file.",
+                "**Error**: Queue is empty. Please upload at least one file.",
                 reply_markup=queue_actions_keyboard(),
+                parse_mode="Markdown"
             )
             return
 
         try:
             if action == ACTION_MERGE_PDF:
                 output_path = merge_pdf_files(pending_files)
-                caption = "✅ DOCUMENT MERGED: Your PDF is ready."
+                caption = "**Task Completed**: Your merged PDF is ready."
             elif action == ACTION_CREATE_ZIP:
                 output_path = create_zip_from_files(pending_files)
-                caption = "✅ ARCHIVE CREATED: Your ZIP bundle is ready."
+                caption = "**Task Completed**: Your ZIP archive is ready."
             else:
                 await query.edit_message_text(
-                    "🚫 ACTION EXPIRED: Please restart from the menu.",
+                    "**Error**: Session expired. Please restart from the menu.",
                     reply_markup=main_menu_keyboard(),
+                    parse_mode="Markdown"
                 )
                 reset_user_state(context.user_data)
                 return
@@ -375,13 +377,13 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
                 )
             reset_user_state(context.user_data)
             await query.edit_message_text(
-                "✨ TASK COMPLETE: What would you like to do next?",
+                "**Ready for next task**: What would you like to do?",
                 reply_markup=main_menu_keyboard(),
                 parse_mode="Markdown"
             )
         except ValueError as exc:
             await query.edit_message_text(
-                f"⚠️ ERROR: {exc}\n\nPlease verify files and try again.",
+                f"**Error**: {exc}\n\nPlease verify your files and try again.",
                 reply_markup=queue_actions_keyboard(),
                 parse_mode="Markdown"
             )
@@ -389,20 +391,20 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
 
 def _conversion_prompt(conversion_target: str) -> str:
     prompt_map = {
-        "jpg_to_png": "🖼 JPG to PNG: Upload your image.",
-        "png_to_jpg": "🖼 PNG to JPG: Upload your image.",
-        "image_to_pdf": "🖼 Image to PDF: Upload any image.",
-        "jpg_to_pdf": "🖼 JPG to PDF: Upload your image.",
-        "word_to_pdf": "📝 Word to PDF: Send your doc/docx file.",
-        "powerpoint_to_pdf": "📊 PPT to PDF: Send your ppt/pptx file.",
-        "excel_to_pdf": "📈 Excel to PDF: Send your xls/xlsx file.",
-        "html_to_pdf": "🌐 HTML to PDF: Send your html file.",
-        "pdf_to_jpg": "📄 PDF to JPG: Send PDF for extraction.",
-        "pdf_to_word": "📄 PDF to Word: Convert to editable doc.",
-        "pdf_to_powerpoint": "📄 PDF to PPT: Turn PDF into presentation.",
-        "pdf_to_excel": "📄 PDF to Excel: Extract tables to sheet.",
-        "pdf_to_pdfa": "🛡 PDF/A: Convert to archival standard.",
+        "jpg_to_png": "**JPG to PNG**: Please upload your image.",
+        "png_to_jpg": "**PNG to JPG**: Please upload your image.",
+        "image_to_pdf": "**Image to PDF**: Please upload an image.",
+        "jpg_to_pdf": "**JPG to PDF**: Please upload your image.",
+        "word_to_pdf": "**Word to PDF**: Please upload your .doc or .docx file.",
+        "powerpoint_to_pdf": "**PowerPoint to PDF**: Please upload your .ppt or .pptx file.",
+        "excel_to_pdf": "**Excel to PDF**: Please upload your .xls or .xlsx file.",
+        "html_to_pdf": "**HTML to PDF**: Please upload your .html file.",
+        "pdf_to_jpg": "**PDF to JPG**: Please upload your PDF file.",
+        "pdf_to_word": "**PDF to Word**: Please upload your PDF file.",
+        "pdf_to_powerpoint": "**PDF to PowerPoint**: Please upload your PDF file.",
+        "pdf_to_excel": "**PDF to Excel**: Please upload your PDF file.",
+        "pdf_to_pdfa": "**PDF to PDF/A**: Please upload your PDF file.",
     }
     base = prompt_map.get(conversion_target, "Please upload the file you wish to process.")
     size_label = f"{round(config.MAX_FILE_SIZE / (1024 * 1024))} MB"
-    return f"{base}\n\n▫️ Limit: {size_label}"
+    return f"{base}\n\n• **Limit**: {size_label}"

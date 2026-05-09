@@ -52,7 +52,7 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
     payload_parts = payload.split("_")
     if len(payload_parts) != 3:
         await update.message.reply_text(
-            "❌ INVALID LINK: This shareable URL is malformed or has expired.",
+            "**Error**: This link is invalid or has expired.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -63,7 +63,7 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
         end_message_id = int(payload_parts[2])
     except ValueError:
         await update.message.reply_text(
-            "❌ INVALID LINK: This shareable URL is malformed or has expired.",
+            "**Error**: This link is invalid or has expired.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
@@ -71,14 +71,14 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
 
     if start_message_id <= 0 or end_message_id < start_message_id:
         await update.message.reply_text(
-            "❌ INVALID LINK: This shareable URL is malformed or has expired.",
+            "**Error**: This link is invalid or has expired.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
         return True
 
     preparing_message = await update.message.reply_text(
-        f"⚙️ Retrieving {end_message_id - start_message_id + 1} files...",
+        f"Retrieving {end_message_id - start_message_id + 1} files...",
         reply_markup=home_keyboard(),
         parse_mode="Markdown"
     )
@@ -99,16 +99,16 @@ async def _handle_start_payload(update: Update, context: ContextTypes.DEFAULT_TY
 
     if not sent_message_ids:
         await update.message.reply_text(
-            "❌ ACCESS ERROR: We couldn't retrieve those files. They may have been removed.",
+            "**Error**: Unable to retrieve files. They may have been removed.",
             reply_markup=home_keyboard(),
             parse_mode="Markdown"
         )
         return True
 
     warning_message = await update.message.reply_text(
-        "⚠️ *AUTO-CLEANUP WARNING*\n\n"
-        "These files will be deleted from this chat in 5 minutes for privacy.\n\n"
-        "Forward them to your Saved Messages if you need to keep them.",
+        "**Privacy Notice**\n\n"
+        "These files will be automatically deleted from this chat in 5 minutes.\n\n"
+        "Please forward them to your Saved Messages if you need to keep them.",
         parse_mode="Markdown"
     )
     sent_message_ids.append(warning_message.message_id)

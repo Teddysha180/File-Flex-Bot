@@ -6,30 +6,31 @@ def _mb_label(size_in_bytes: int) -> str:
 
 
 INTRO_ANIMATION_FRAMES = [
-    "🚀 Initializing File Flex...\n`[#---------] 10%`",
-    "🛰 Connecting to Cloud Nodes...\n`[###-------] 30%`",
-    "🔧 Calibrating Image Engines...\n`[######----] 60%`",
-    "📦 Loading Archive Core...\n`[#########-] 90%`",
-    "✅ System Ready.\n`[##########] 100%`",
+    "Starting system...",
+    "Connecting to cloud nodes...",
+    "Calibrating processing engines...",
+    "Loading modules...",
+    "System ready.",
 ]
 
 WELCOME_MESSAGE = (
-    "⬛ *FILE FLEX BLACK*\n\n"
-    "Select a tool suite below to begin. Upload your file and I will handle the rest instantly.\n\n"
-    f"▫️ Global Limit: {_mb_label(config.MAX_FILE_SIZE)}\n"
-    f"▫️ ZIP Capacity: {_mb_label(config.ZIP_MAX_FILE_SIZE)}"
+    "**FILEFLEX CLOUD**\n\n"
+    "Welcome to your professional file management suite. Select a tool below to begin. "
+    "Upload your file and we will handle the rest.\n\n"
+    f"• **Global Limit**: {_mb_label(config.MAX_FILE_SIZE)}\n"
+    f"• **Archive Capacity**: {_mb_label(config.ZIP_MAX_FILE_SIZE)}"
 )
 
 HELP_MESSAGE = (
-    "⬛ *QUICK START GUIDE*\n\n"
-    "1. Select a Tool: Choose from the menu.\n"
-    "2. Upload File: Send the file to process.\n"
-    "3. Refine: Provide extra input if requested.\n\n"
-    "⬛ *PRIMARY WORKFLOWS*\n"
-    "• 🔄 Professional File Conversion\n"
-    "• 🗜 Smart Image Optimization\n"
-    "• 📦 Archive Extraction & Creation\n"
-    "• 📝 Secure File Renaming\n"
-    "• 📄 Advanced PDF Merging/Splitting\n\n"
-    f"▫️ Limit: Up to {_mb_label(config.MAX_FILE_SIZE)} per operation."
+    "**QUICK START GUIDE**\n\n"
+    "1. **Select Tool**: Choose a function from the menu.\n"
+    "2. **Upload**: Send the file you wish to process.\n"
+    "3. **Process**: Follow any additional prompts to complete the task.\n\n"
+    "**CORE CAPABILITIES**\n"
+    "• Professional File Conversion\n"
+    "• Image Optimization & Compression\n"
+    "• Archive Management (ZIP)\n"
+    "• Secure File Renaming\n"
+    "• PDF Management (Merge/Split)\n\n"
+    f"Note: Maximum file size is {_mb_label(config.MAX_FILE_SIZE)} per operation."
 )

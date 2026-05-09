@@ -180,9 +180,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             context.user_data[STATE_KEY_PENDING_FILE] = str(input_path)
             context.user_data[STATE_KEY_PENDING_EXTENSION] = Path(file_name).suffix
             await update.message.reply_text(
-                "📥 FILE RECEIVED: Send the new name (including extension).",
+                "📥 <b>FILE RECEIVED</b>: Now send the new name (including extension).",
                 reply_markup=home_keyboard(),
-                parse_mode="Markdown"
+                parse_mode="HTML"
             )
             return
 
@@ -192,10 +192,10 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             pending_files = context.user_data.setdefault(STATE_KEY_PENDING_FILES, [])
             pending_files.append(str(input_path))
             await update.message.reply_text(
-                f"📑 ADDED TO QUEUE: {len(pending_files)} files ready.\n"
+                f"📑 <b>ADDED TO QUEUE</b>: {len(pending_files)} files ready.\n"
                 "Send more or tap Finish Merge.",
                 reply_markup=merge_keyboard(),
-                parse_mode="Markdown"
+                parse_mode="HTML"
             )
             return
 

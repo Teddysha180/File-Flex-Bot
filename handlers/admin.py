@@ -261,15 +261,15 @@ async def handle_admin_text(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         else:
             if "|" not in text:
                 await update.message.reply_text(
-                    "Use this button format:\n`Button Text | https://example.com`\n\nOr send `skip`.",
-                    parse_mode="Markdown",
+                    "Use this button format:\nButton Text | https://example.com\n\nOr send skip.",
+                    parse_mode="HTML",
                 )
                 return True
             button_text, button_url = [part.strip() for part in text.split("|", 1)]
             if not button_text or not button_url.startswith(("http://", "https://")):
                 await update.message.reply_text(
-                    "That button format looks invalid. Use:\n`Button Text | https://example.com`",
-                    parse_mode="Markdown",
+                    "That button format looks invalid. Use:\nButton Text | https://example.com",
+                    parse_mode="HTML",
                 )
                 return True
             context.user_data[STATE_KEY_BROADCAST_BUTTON_TEXT] = button_text
@@ -307,9 +307,9 @@ async def handle_admin_photo(update: Update, context: ContextTypes.DEFAULT_TYPE)
             caption=update.message.caption or "",
         )
         await update.message.reply_text(
-            f"📸 *PHOTO #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}* added.\n"
+            f"📸 <b>PHOTO #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}</b> added.\n"
             "Send more files or tap Create Link.",
-            parse_mode="Markdown",
+            parse_mode="HTML",
             reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
         )
         return True
@@ -357,9 +357,9 @@ async def handle_admin_video(update: Update, context: ContextTypes.DEFAULT_TYPE)
             caption=update.message.caption or "",
         )
         await update.message.reply_text(
-            f"🎬 *VIDEO #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}* added.\n"
+            f"🎬 <b>VIDEO #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}</b> added.\n"
             "Send more files or tap Create Link.",
-            parse_mode="Markdown",
+            parse_mode="HTML",
             reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
         )
         return True
@@ -407,9 +407,9 @@ async def handle_admin_document(update: Update, context: ContextTypes.DEFAULT_TY
             caption=update.message.caption or "",
         )
         await update.message.reply_text(
-            f"📄 *FILE #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}* added.\n"
+            f"📄 <b>FILE #{len(context.user_data.get(STATE_KEY_STORE_FILES, []))}</b> added.\n"
             "Send more files or tap Create Link.",
-            parse_mode="Markdown",
+            parse_mode="HTML",
             reply_markup=store_creation_keyboard(is_main_admin_user(update.effective_user.id)),
         )
         return True
@@ -627,12 +627,22 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
         )
         return
 
+    progress_message = await update.message.reply_text(
+        f"⏳ <b>Processing {len(files)} files...</b>\nThis may take a moment for large batches.",
+        parse_mode="HTML"
+    )
+
     sent_message_ids: list[int] = []
     for item in files:
-        sent_message = await _send_store_item_to_channel(context, item)
-        sent_message_ids.append(sent_message.message_id)
+        try:
+            sent_message = await _send_store_item_to_channel(context, item)
+            if sent_message:
+                sent_message_ids.append(sent_message.message_id)
+        except Exception as e:
+            logger.error(f"Error during store creation batch upload: {e}")
 
     if not sent_message_ids:
+        await progress_message.delete()
         await update.message.reply_text(
             "❌ Could not save files to storage channel.",
             reply_markup=admin_keyboard(is_main_admin_user(user_id))
@@ -651,13 +661,14 @@ async def _finish_store_creation(update: Update, context: ContextTypes.DEFAULT_T
 
     total_files = len(files)
     reset_user_state(context.user_data)
+    await progress_message.delete()
     await update.message.reply_text(
-        "⬛ *SHARE LINK GENERATED*\n\n"
+        f"<b>⬛ SHARE LINK GENERATED</b>\n\n"
         f"📁 Files: {total_files}\n"
-        f"🔗 Link: Open in Bot\n\n"
+        f"🔗 Link: <a href='{share_link}'>{share_link}</a>\n\n"
         "Deliver files automatically to any user who clicks the button.",
         reply_markup=admin_keyboard(is_main_admin_user(user_id)),
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
 
 

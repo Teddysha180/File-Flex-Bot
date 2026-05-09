@@ -96,12 +96,12 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
             stats = db.get_user_stats(update.effective_user.id)
             if stats:
                 stats_text = (
-                    "📊 *PERFORMANCE PROFILE*\n\n"
+                    "<b>📊 PERFORMANCE PROFILE</b>\n\n"
                     f"📂 Processed: {stats['total_files']} files\n"
                     f"💾 Saved: {stats['storage_saved'] / (1024*1024):.1f} MB\n"
                     f"📈 Active: {stats['files_this_week']} this week\n"
                     f"📅 Joined: {stats['member_since']}\n\n"
-                    "Efficiency level: *Optimal*"
+                    "Efficiency level: Optimal"
                 )
             else:
                 stats_text = "📊 No activity recorded yet. Send your first file to start tracking efficiency."
@@ -109,7 +109,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
             await query.edit_message_text(
                 stats_text,
                 reply_markup=settings_keyboard(),
-                parse_mode="Markdown"
+                parse_mode="HTML"
             )
         return
 
@@ -134,7 +134,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
         if update.effective_user:
             history = db.get_processing_history(update.effective_user.id, limit=5)
             if history:
-                history_text = "📋 *RECENT OPERATIONS*\n\n"
+                history_text = "<b>📋 RECENT OPERATIONS</b>\n\n"
                 for idx, record in enumerate(history, 1):
                     action, input_file, output_file, in_size, out_size, proc_time, timestamp = record
                     history_text += f"{idx}. {action.upper()}\n"
@@ -146,7 +146,7 @@ async def handle_menu_selection(update: Update, context: ContextTypes.DEFAULT_TY
             await query.edit_message_text(
                 history_text,
                 reply_markup=settings_keyboard(),
-                parse_mode="Markdown"
+                parse_mode="HTML"
             )
         return
 
